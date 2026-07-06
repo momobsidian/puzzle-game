@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<title>Clear Game Progress</title>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --surface-2: #111111;
+    --border: #333333;
+    --border-soft: #1a1a1a;
+    --text: #ffffff;
+    --text-dim: #888888;
+    --accent: #ffffff;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #4ade80;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Consolas", monospace;
+  }
+
+  * { box-sizing: border-box; }
+  
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 600px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    padding: 40px;
+  }
+
+  h1 {
+    font-size: 32px;
+    margin: 0 0 10px 0;
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    margin-bottom: 30px;
+    font-size: 14px;
+  }
+
+  .warning-box {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+    padding: 20px;
+    margin-bottom: 30px;
+  }
+
+  .warning-title {
+    font-weight: 700;
+    color: var(--danger);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .warning-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .warning-list li {
+    padding: 5px 0 5px 24px;
+    position: relative;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .warning-list li:before {
+    content: "•";
+    position: absolute;
+    left: 8px;
+    color: var(--danger);
+  }
+
+  .progress-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    padding: 20px;
+    margin-bottom: 30px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .progress-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 15px;
+  }
+
+  .level-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+  }
+
+  .level-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+
+  .level-number {
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .level-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .badge-completed {
+    background: rgba(78, 236, 133, 0.15);
+    color: var(--success);
+  }
+
+  .badge-progress {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+  }
+
+  .level-stats {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+
+  .level-stats span {
+    margin-right: 15px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    flex: 1;
+    min-width: 150px;
+    padding: 14px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 0;
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #000;
+  }
+
+  .btn-danger:hover {
+    background: #dc2626;
+    transform: scale(1.02);
+  }
+
+  .btn-secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .message {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    display: none;
+  }
+
+  .message.show {
+    display: block;
+  }
+
+  .message-success {
+    background: rgba(78, 236, 133, 0.15);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+
+  .message-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 20px;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    .button-group {
+      flex-direction: column;
+    }
+    .btn {
+      width: 100%;
+    }
+  }
+
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: none; align-items: center; justify-content: center; z-index: 1000;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 24px; max-width: 400px; width: 90%;
+  }
+  .modal-title {
+    font-size: 18px; font-weight: 700; color: var(--danger);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .modal-body {
+    font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <i data-lucide="alert-triangle"></i>
+      Clear Game Progress
+    </h1>
+    <p class="subtitle">Reset all game data and start fresh</p>
+
+    <div class="warning-box">
+      <div class="warning-title">
+        <i data-lucide="siren"></i>
+        This action cannot be undone
+      </div>
+      <ul class="warning-list">
+        <li>All completed levels will be reset</li>
+        <li>Best scores and times will be deleted</li>
+        <li>In-progress games will be lost</li>
+        <li>Total play time will be cleared</li>
+        <li>Only Level 1 will be unlocked</li>
+      </ul>
+    </div>
+
+    <div class="progress-box" id="progressBox">
+      <div class="progress-title">Current Progress</div>
+      <div id="progressContent"></div>
+    </div>
+
+    <div class="button-group">
+      <button class="btn btn-danger" id="clearBtn" onclick="clearProgress()">
+        Clear All Progress
+      </button>
+      <button class="btn btn-secondary" onclick="location.href='levels.html'">
+        Cancel
+      </button>
+    </div>
+
+    <div class="message" id="message"></div>
+  </div>
+
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal">
+      <div class="modal-title"><i data-lucide="alert-triangle"></i> Are you sure?</div>
+      <div class="modal-body">
+        This will:<br><br>
+        • Delete all completed levels<br>
+        • Remove all scores and times<br>
+        • Clear in-progress games<br>
+        • Reset to Level 1 only<br><br>
+        This action CANNOT be undone!
+      </div>
+      <div class="button-group">
+        <button class="btn btn-danger" onclick="executeClear()">Clear All Progress</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  let currentProgress = null;
+
+  function formatTime(seconds) {
+    if (!seconds) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  async function loadProgress() {
+    try {
+      const response = await fetch('/api/progress');
+      const data = await response.json();
+      currentProgress = data;
+      displayProgress(data);
+    } catch (err) {
+      console.error('Error loading progress:', err);
+      showMessage('Error loading progress data', 'error');
+    }
+  }
+
+  function displayProgress(progress) {
+    const content = document.getElementById('progressContent');
+    
+    if (!progress.levels || Object.keys(progress.levels).length === 0) {
+      content.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i data-lucide="gamepad-2" style="width: 48px; height: 48px;"></i></div>
+          <div>No progress found</div>
+          <div style="font-size: 12px; margin-top: 5px;">The game is already in a fresh state</div>
+        </div>
+      `;
+      document.getElementById('clearBtn').disabled = true;
+      return;
+    }
+
+    const levels = Object.keys(progress.levels).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    let html = '';
+    for (const levelNum of levels) {
+      const level = progress.levels[levelNum];
+      const isCompleted = level.completed;
+      const hasProgress = level.inProgress;
+      
+      html += `
+        <div class="level-item">
+          <div class="level-header">
+            <div class="level-number">Level ${levelNum}</div>
+            ${isCompleted ? '<span class="level-badge badge-completed"><i data-lucide="check" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"></i> Completed</span>' : ''}
+            ${hasProgress && !isCompleted ? '<span class="level-badge badge-progress"><i data-lucide="pause" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"></i> In Progress</span>' : ''}
+          </div>
+          <div class="level-stats">
+            ${isCompleted ? `<span>Best: ${formatTime(level.bestTime)}</span>` : ''}
+            ${isCompleted ? `<span>Moves: ${level.bestMoves}</span>` : ''}
+            ${hasProgress && !isCompleted ? `<span>Moves: ${level.inProgress.moves}</span>` : ''}
+            ${level.totalTimePlayed ? `<span>Played: ${formatTime(level.totalTimePlayed)}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }
+    
+    content.innerHTML = html;
+    lucide.createIcons();
+  }
+
+  function clearProgress() {
+    document.getElementById('confirmModal').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+  }
+
+  async function executeClear() {
+    closeModal();
+    document.getElementById('clearBtn').disabled = true;
+
+    try {
+      // Clear server progress
+      const response = await fetch('/api/clear-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to clear server progress');
+      }
+
+      // Clear localStorage
+      try {
+        localStorage.removeItem('puzzleGameState');
+        localStorage.removeItem('shouldRedirectToLevels');
+      } catch (err) {
+        console.warn('Could not clear localStorage:', err);
+      }
+
+      showMessage('All progress cleared successfully! The game has been reset.', 'success');
+      
+      // Reload progress display
+      setTimeout(() => {
+        loadProgress();
+      }, 1000);
+
+    } catch (err) {
+      console.error('Error clearing progress:', err);
+      showMessage('Error clearing progress: ' + err.message, 'error');
+      document.getElementById('clearBtn').disabled = false;
+    }
+  }
+
+  function showMessage(text, type) {
+    const message = document.getElementById('message');
+    // Prepend icon based on type
+    const iconStr = type === 'success' 
+      ? '<i data-lucide="check-circle" style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></i>'
+      : '<i data-lucide="x-circle" style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></i>';
+    
+    message.innerHTML = iconStr + '<span style="vertical-align: middle;">' + text + '</span>';
+    message.className = 'message show message-' + type;
+    lucide.createIcons();
+    
+    if (type === 'success') {
+      setTimeout(() => {
+        message.classList.remove('show');
+      }, 5000);
+    }
+  }
+
+  // Load progress on page load
+  loadProgress();
+  lucide.createIcons();
+</script>
+</body>
+</html>

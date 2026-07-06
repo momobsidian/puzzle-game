@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Live Game Monitor</title>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --surface-2: #111111;
+    --border: #333333;
+    --border-soft: #1a1a1a;
+    --text: #ffffff;
+    --text-dim: #888888;
+    --text-faint: #555555;
+    --accent: #00ff88;
+    --accent-dim: #00aa66;
+    --warning: #ffaa00;
+    --error: #ff4444;
+    --mono: ui-monospace,"SF Mono","JetBrains Mono","Consolas",monospace;
+    --sans: "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    padding: 20px;
+  }
+  
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  
+  .status-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  
+  .status-card {
+    flex: 1;
+    min-width: 120px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+  }
+  
+  .status-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  
+  .status-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  .connection-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--error);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  .status-dot.connected {
+    background: var(--accent);
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  .sessions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+  
+  .session-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px;
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .session-card.stale {
+    opacity: 0.5;
+    border-color: var(--border-soft);
+  }
+  
+  .session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  
+  .session-id {
+    font-family: var(--mono);
+    font-size: 7px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .session-level {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  .session-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  
+  .stat-item {
+    background: var(--surface-2);
+    padding: 4px 6px;
+    border: 1px solid var(--border-soft);
+  }
+  
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 6px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+  
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  
+  .progress-bar-container {
+    margin-top: 6px;
+    margin-bottom: 8px;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 7px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    text-align: right;
+  }
+  
+  .device-info {
+    font-family: var(--mono);
+    font-size: 7px;
+    color: var(--text-faint);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-soft);
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+  
+  .empty-state h2 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  
+  .empty-state p {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  
+  .solved-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 5px;
+  }
+  
+  .skipped-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 5px;
+  }
+  
+  .tile-grid {
+    display: grid;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--border);
+    margin-top: 8px;
+    background: var(--surface-2);
+    position: relative;
+    overflow: hidden;
+    gap: 0;
+    flex: 1;
+    min-height: 250px;
+  }
+  
+  .tile {
+    background-repeat: no-repeat;
+    position: relative;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+  }
+  
+  .tile.dragging {
+    z-index: 100;
+  }
+  
+  .tile.swap-target {
+    z-index: 99;
+  }
+  
+  .tile-number {
+    display: none;
+  }
+  
+  /* Live update indicator */
+  .session-card::before {
+    display: none;
+  }
+  
+  .session-card.updating {
+    animation: none;
+  }
+  
+  /* Smooth tile swap animation */
+  @keyframes tileSwapSmooth {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  .tile.animating {
+    animation: none;
+  }
+  
+  .grid-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎮 Admin Panel</h1>
+      <p class="subtitle">Live Game Monitoring Dashboard</p>
+    </header>
+    
+    <div class="connection-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="connectionStatus">Connecting to server...</span>
+    </div>
+    
+    <div class="status-bar">
+      <div class="status-card">
+        <div class="status-label">Active Players</div>
+        <div class="status-value" id="activeCount">0</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">Total Moves</div>
+        <div class="status-value" id="totalMoves">0</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">Avg Progress</div>
+        <div class="status-value" id="avgProgress">0%</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">Puzzles Solved</div>
+        <div class="status-value" id="solvedCount">0</div>
+      </div>
+    </div>
+    
+    <div id="sessionsContainer" class="sessions-grid">
+      <div class="empty-state">
+        <h2>No Active Sessions</h2>
+        <p>Waiting for players to start a game...</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const sessions = new Map();
+  let ws = null;
+  let reconnectTimeout = null;
+  const animatingTiles = new Set(); // Track tiles currently animating
+  let pollingInterval = null; // For HTTP polling fallback
+  let usePolling = false;
+  const lastUpdateTime = new Map(); // Track last update timestamp per session
+  
+  const statusDot = document.getElementById('statusDot');
+  const connectionStatus = document.getElementById('connectionStatus');
+  const activeCount = document.getElementById('activeCount');
+  const totalMoves = document.getElementById('totalMoves');
+  const avgProgress = document.getElementById('avgProgress');
+  const solvedCount = document.getElementById('solvedCount');
+  const sessionsContainer = document.getElementById('sessionsContainer');
+  
+  function connect() {
+    // Detect if we're behind a tunnel (https) or local (http)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.hostname;
+    
+    // Use the same host and default to standard ports
+    let wsUrl;
+    if (window.location.port) {
+      // If there's a port in the URL, use it
+      wsUrl = `${protocol}//${host}:${window.location.port}/admin-ws`;
+    } else {
+      // No port means we're likely behind a reverse proxy/tunnel
+      wsUrl = `${protocol}//${host}/admin-ws`;
+    }
+    
+    console.log('Connecting to WebSocket:', wsUrl);
+    ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      statusDot.classList.add('connected');
+      connectionStatus.textContent = 'Connected to server';
+      
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        
+        console.log('📩 WebSocket message received:', message.type, message.data?.sessionId?.substring(0, 8));
+        
+        if (message.type === 'init') {
+          // Initial load of active sessions
+          console.log('🔄 Init: Loading', message.data.length, 'sessions');
+          message.data.forEach(session => {
+            sessions.set(session.sessionId, session);
+          });
+          renderSessions();
+        } else if (message.type === 'gameUpdate') {
+          const oldSession = sessions.get(message.data.sessionId);
+          const newSession = message.data;
+          
+          console.log('🎮 Game Update:', {
+            session: newSession.sessionId.substring(0, 8),
+            event: newSession.event,
+            moves: newSession.moves,
+            hasSwappedTiles: !!newSession.swappedTiles,
+            swappedTiles: newSession.swappedTiles,
+            timestamp: newSession.timestamp,
+            lastUpdate: newSession.lastUpdate
+          });
+          
+          // Check if this update is newer than the last one
+          const lastTime = lastUpdateTime.get(newSession.sessionId) || 0;
+          const currentTime = newSession.timestamp || newSession.lastUpdate || Date.now();
+          
+          console.log('⏱️ Timestamp check:', {
+            session: newSession.sessionId.substring(0, 8),
+            lastTime,
+            currentTime,
+            isNewer: currentTime > lastTime,
+            diff: currentTime - lastTime
+          });
+          
+          // Skip if this is an older/duplicate update
+          if (currentTime <= lastTime) {
+            console.warn('⛔ SKIPPED: Stale update for', newSession.sessionId.substring(0, 8));
+            return;
+          }
+          
+          lastUpdateTime.set(newSession.sessionId, currentTime);
+          
+          // Check if session card exists
+          const existingCard = document.querySelector(`[data-session-id="${newSession.sessionId}"]`);
+          
+          if (!existingCard) {
+            // New session - render everything
+            console.log('✨ New session, rendering card');
+            sessions.set(newSession.sessionId, newSession);
+            renderSessions();
+          } else {
+            // Existing session - update only changed elements
+            console.log('♻️ Existing session, updating card');
+            sessions.set(newSession.sessionId, newSession);
+            updateSessionCard(existingCard, newSession, oldSession);
+          }
+        } else if (message.type === 'sessionEnded') {
+          // Remove session
+          sessions.delete(message.data.sessionId);
+          renderSessions();
+        }
+      } catch (err) {
+        console.error('Error parsing message:', err);
+      }
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+      statusDot.classList.remove('connected');
+      connectionStatus.textContent = 'Disconnected. Reconnecting...';
+      
+      // Attempt to reconnect after 3 seconds
+      reconnectTimeout = setTimeout(() => {
+        connect();
+      }, 3000);
+    };
+    
+    ws.onerror = (err) => {
+      console.error('WebSocket error:', err);
+      statusDot.classList.remove('connected');
+      connectionStatus.textContent = 'WebSocket failed. Trying polling...';
+      
+      // Fall back to HTTP polling after 2 failed attempts
+      setTimeout(() => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          startPolling();
+        }
+      }, 2000);
+    };
+  }
+  
+  function startPolling() {
+    if (pollingInterval) return;
+    if (usePolling) return;
+    
+    usePolling = true;
+    console.log('Using HTTP polling fallback');
+    statusDot.classList.add('connected');
+    connectionStatus.textContent = 'Connected (HTTP polling mode)';
+    
+    // Close WebSocket if still open
+    if (ws) {
+      try { ws.close(); } catch(e) {}
+      ws = null;
+    }
+    
+    // Initial fetch
+    fetchActiveSessions();
+    
+    // Poll every 1.5 seconds
+    pollingInterval = setInterval(fetchActiveSessions, 1500);
+  }
+  
+  async function fetchActiveSessions() {
+    try {
+      const res = await fetch('/api/active-sessions');
+      if (!res.ok) throw new Error('Failed to fetch');
+      
+      const data = await res.json();
+      
+      // Process each session
+      data.sessions.forEach(session => {
+        const oldSession = sessions.get(session.sessionId);
+        sessions.set(session.sessionId, session);
+        
+        const card = document.querySelector(`[data-session-id="${session.sessionId}"]`);
+        if (card && oldSession) {
+          updateSessionCard(card, session, oldSession);
+        } else if (!card) {
+          renderSessions();
+        }
+      });
+      
+      // Remove sessions that are no longer in the list
+      const activeIds = new Set(data.sessions.map(s => s.sessionId));
+      for (const [id] of sessions) {
+        if (!activeIds.has(id)) {
+          sessions.delete(id);
+        }
+      }
+      
+      // Re-render if session count changed
+      if (sessions.size !== data.sessions.length) {
+        renderSessions();
+      } else {
+        updateStats();
+      }
+    } catch (err) {
+      console.error('Polling error:', err);
+      statusDot.classList.remove('connected');
+      connectionStatus.textContent = 'Connection error. Retrying...';
+    }
+  }
+  
+  function renderSessions() {
+    updateStats();
+    
+    if (sessions.size === 0) {
+      sessionsContainer.innerHTML = `
+        <div class="empty-state">
+          <h2>No Active Sessions</h2>
+          <p>Waiting for players to start a game...</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const now = Date.now();
+    const sessionArray = Array.from(sessions.values());
+    
+    // Sort by most recent activity
+    sessionArray.sort((a, b) => b.lastUpdate - a.lastUpdate);
+    
+    sessionsContainer.innerHTML = sessionArray.map(session => {
+      const isStale = now - session.lastUpdate > 30000;
+      const isSolved = session.solved || false;
+      const gridSize = session.gridSize || 5; // Default to 5x5
+      
+      // Generate tile grid HTML
+      let tileGridHTML = '';
+      if (session.tilePositions && session.tilePositions.length > 0 && session.imageUrl) {
+        const tiles = session.tilePositions;
+        tileGridHTML = `
+          <div class="tile-grid" style="grid-template-columns: repeat(${gridSize}, 1fr);" data-session="${session.sessionId}">
+            ${tiles.map((piece, pos) => {
+              const col = piece % gridSize;
+              const row = Math.floor(piece / gridSize);
+              const bgX = (col * 100 / (gridSize - 1));
+              const bgY = (row * 100 / (gridSize - 1));
+              
+              return `
+                <div class="tile" 
+                     data-pos="${pos}" 
+                     data-piece="${piece}"
+                     style="background-image: url('${session.imageUrl}'); 
+                            background-size: ${gridSize * 100}% ${gridSize * 100}%;
+                            background-position: ${bgX}% ${bgY}%;">
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else {
+        tileGridHTML = `
+          <div class="tile-grid" style="grid-template-columns: repeat(${gridSize}, 1fr);">
+            <div class="grid-loading">Loading puzzle state...</div>
+          </div>
+        `;
+      }
+      
+      return `
+        <div class="session-card ${isStale ? 'stale' : ''}" data-session-id="${session.sessionId}">
+          ${isSolved ? '<div class="solved-badge">✓ Solved</div>' : ''}
+          ${session.skipped ? '<div class="skipped-badge">⏭ Skipped</div>' : ''}
+          
+          <div class="session-header">
+            <div>
+              <div class="session-id">Session: ${session.sessionId.substring(0, 8)}</div>
+              <div class="session-level">Level ${session.level}</div>
+            </div>
+          </div>
+          
+          <div class="session-stats">
+            <div class="stat-item">
+              <div class="stat-label">Moves</div>
+              <div class="stat-value" data-stat="moves">${session.moves || 0}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Time</div>
+              <div class="stat-value" data-stat="time">${formatTime(session.elapsedTime || 0)}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Correct</div>
+              <div class="stat-value" data-stat="correct">${session.correctTiles || 0}/${session.totalTiles || 25}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Event</div>
+              <div class="stat-value" data-stat="event" style="font-size: 10px; text-transform: uppercase;">${session.event || 'Playing'}</div>
+            </div>
+          </div>
+          
+          <div class="progress-bar-container">
+            <div class="progress-bar">
+              <div class="progress-fill" data-progress="fill" style="width: ${session.progress || 0}%"></div>
+            </div>
+            <div class="progress-label" data-progress="label">${session.progress || 0}% Complete</div>
+          </div>
+          
+          ${tileGridHTML}
+          
+          <div class="device-info" data-device-info>
+            Device: ${session.device || 'Unknown'} | 
+            Last Update: ${getTimeAgo(session.lastUpdate)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  function updateSessionCard(card, newSession, oldSession) {
+    // Update stats without re-rendering
+    const movesEl = card.querySelector('[data-stat="moves"]');
+    const timeEl = card.querySelector('[data-stat="time"]');
+    const correctEl = card.querySelector('[data-stat="correct"]');
+    const eventEl = card.querySelector('[data-stat="event"]');
+    
+    if (movesEl) movesEl.textContent = newSession.moves || 0;
+    if (timeEl) timeEl.textContent = formatTime(newSession.elapsedTime || 0);
+    if (correctEl) correctEl.textContent = `${newSession.correctTiles || 0}/${newSession.totalTiles || 25}`;
+    if (eventEl) eventEl.textContent = newSession.event || 'Playing';
+    
+    // Update progress bar
+    const progressFill = card.querySelector('[data-progress="fill"]');
+    const progressLabel = card.querySelector('[data-progress="label"]');
+    if (progressFill) progressFill.style.width = `${newSession.progress || 0}%`;
+    if (progressLabel) progressLabel.textContent = `${newSession.progress || 0}% Complete`;
+    
+    // Update device info
+    const deviceInfo = card.querySelector('[data-device-info]');
+    if (deviceInfo) {
+      deviceInfo.textContent = `Device: ${newSession.device || 'Unknown'} | Last Update: ${getTimeAgo(newSession.lastUpdate)}`;
+    }
+    
+    // Update stale status
+    const now = Date.now();
+    const isStale = now - newSession.lastUpdate > 30000;
+    card.classList.toggle('stale', isStale);
+    
+    // Update solved badge
+    if (newSession.solved && !card.querySelector('.solved-badge')) {
+      card.insertAdjacentHTML('afterbegin', '<div class="solved-badge">✓ Solved</div>');
+    }
+    
+    // Update skipped badge
+    if (newSession.skipped && !card.querySelector('.skipped-badge')) {
+      // Remove solved badge if present, replace with skipped
+      const solvedBadge = card.querySelector('.solved-badge');
+      if (solvedBadge) solvedBadge.remove();
+      card.insertAdjacentHTML('afterbegin', '<div class="skipped-badge">⏭ Skipped</div>');
+    }
+    
+    // Update tiles with animation
+    if (newSession.tilePositions && newSession.imageUrl) {
+      updateTiles(card, newSession, oldSession);
+    }
+  }
+  
+  function updateTiles(card, newSession, oldSession) {
+    const grid = card.querySelector(`[data-session="${newSession.sessionId}"]`);
+    if (!grid) return;
+    
+    const gridSize = newSession.gridSize || 5;
+    const newTiles = newSession.tilePositions;
+    const oldTiles = oldSession?.tilePositions || [];
+    const swappedTiles = newSession.swappedTiles;
+    
+    console.log('🔧 updateTiles called:', {
+      session: newSession.sessionId.substring(0, 8),
+      event: newSession.event,
+      hasSwappedTiles: !!swappedTiles,
+      swappedTiles: swappedTiles
+    });
+    
+    // If this is a move event with swapped tiles, ONLY animate - don't update directly
+    if (swappedTiles && newSession.event === 'move') {
+      console.log('🎬 Triggering animation for move event');
+      animateSmoothSwap(grid, swappedTiles, gridSize, newTiles, newSession.imageUrl, newSession.sessionId);
+    } else if (newSession.event !== 'move') {
+      // Only do direct updates for non-move events (like game start, resume, etc)
+      console.log('📝 Direct update for non-move event:', newSession.event);
+      updateTilesDirectly(grid, newTiles, oldTiles, gridSize, newSession.imageUrl);
+    } else {
+      console.log('⚠️ Move event without swappedTiles, skipping');
+    }
+  }
+  
+  function animateSmoothSwap(grid, swappedTiles, gridSize, newTiles, imageUrl, sessionId) {
+    const pos1 = swappedTiles.tile1.pos;
+    const pos2 = swappedTiles.tile2.pos;
+    
+    // Create unique key for this swap including session
+    const swapKey = `${sessionId}-${Math.min(pos1, pos2)}-${Math.max(pos1, pos2)}`;
+    
+    console.log('🎯 animateSmoothSwap called:', {
+      session: sessionId.substring(0, 8),
+      swapKey,
+      pos1,
+      pos2,
+      tile1Piece: swappedTiles.tile1.piece,
+      tile2Piece: swappedTiles.tile2.piece,
+      isAnimating: animatingTiles.has(swapKey),
+      currentlyAnimating: Array.from(animatingTiles)
+    });
+    
+    // Check if this exact swap is already animating
+    if (animatingTiles.has(swapKey)) {
+      console.warn('🚫 BLOCKED: Swap already animating:', swapKey);
+      console.warn('   Currently animating:', Array.from(animatingTiles));
+      return;
+    }
+    
+    const tile1El = grid.querySelector(`[data-pos="${pos1}"]`);
+    const tile2El = grid.querySelector(`[data-pos="${pos2}"]`);
+    
+    if (!tile1El || !tile2El) {
+      console.error('❌ Tiles not found in grid:', { pos1, pos2 });
+      return;
+    }
+    
+    // Get current piece values BEFORE any updates
+    const currentPiece1 = parseInt(tile1El.dataset.piece);
+    const currentPiece2 = parseInt(tile2El.dataset.piece);
+    
+    // Get target pieces (what they should become)
+    const targetPiece1 = swappedTiles.tile1.piece;
+    const targetPiece2 = swappedTiles.tile2.piece;
+    
+    console.log('🔍 Piece comparison:', {
+      pos1: { current: currentPiece1, target: targetPiece1, changed: currentPiece1 !== targetPiece1 },
+      pos2: { current: currentPiece2, target: targetPiece2, changed: currentPiece2 !== targetPiece2 }
+    });
+    
+    // Only animate if there's actually a change
+    if (currentPiece1 === targetPiece1 && currentPiece2 === targetPiece2) {
+      console.warn('⏭️ SKIPPED: No change detected, pieces already in place');
+      return;
+    }
+    
+    // Mark as animating IMMEDIATELY to block duplicates
+    animatingTiles.add(swapKey);
+    console.log('✅ Animation STARTED, added to set:', swapKey);
+    console.log('   Active animations:', Array.from(animatingTiles));
+    
+    // Calculate grid positions for the animation
+    const row1 = Math.floor(pos1 / gridSize);
+    const col1 = pos1 % gridSize;
+    const row2 = Math.floor(pos2 / gridSize);
+    const col2 = pos2 % gridSize;
+    
+    // Calculate distance in grid cells
+    const dx = (col2 - col1) * 100; // percentage
+    const dy = (row2 - row1) * 100; // percentage
+    
+    console.log('📐 Animation vectors:', { dx: `${dx}%`, dy: `${dy}%` });
+    
+    // Set z-index for proper layering
+    tile1El.classList.add('dragging');
+    tile2El.classList.add('swap-target');
+    
+    // Start animation: Move tiles visually without changing content
+    requestAnimationFrame(() => {
+      tile1El.style.transform = `translate(${dx}%, ${dy}%)`;
+      tile2El.style.transform = `translate(${-dx}%, ${-dy}%)`;
+      console.log('🎬 Transform applied, animation in progress...');
+    });
+    
+    // After animation completes, swap the content and reset position
+    setTimeout(() => {
+      console.log('🔄 Animation complete, swapping content for:', swapKey);
+      
+      // FIRST: Remove transforms WITHOUT changing content yet
+      tile1El.style.transition = 'none'; // Disable transition temporarily
+      tile2El.style.transition = 'none';
+      tile1El.style.transform = '';
+      tile2El.style.transform = '';
+      
+      // Force reflow to apply the transform removal
+      void tile1El.offsetWidth;
+      void tile2El.offsetWidth;
+      
+      // NOW update the content (tiles are already in visual position)
+      updateTileContent(tile1El, targetPiece1, gridSize, imageUrl);
+      updateTileContent(tile2El, targetPiece2, gridSize, imageUrl);
+      
+      console.log('✨ Content updated at destination positions');
+      
+      // Clean up classes and re-enable transitions
+      requestAnimationFrame(() => {
+        tile1El.classList.remove('dragging');
+        tile2El.classList.remove('swap-target');
+        tile1El.style.transition = '';
+        tile2El.style.transition = '';
+        
+        console.log('🎨 Transitions re-enabled');
+      });
+      
+      // Remove from animating set after animation + a buffer
+      setTimeout(() => {
+        animatingTiles.delete(swapKey);
+        console.log('🗑️ Animation COMPLETE, removed from set:', swapKey);
+        console.log('   Remaining animations:', Array.from(animatingTiles));
+      }, 200); // Increased buffer to prevent rapid re-triggers
+    }, 400); // Match CSS transition duration
+  }
+  
+  function updateTileContent(tileEl, piece, gridSize, imageUrl) {
+    const col = piece % gridSize;
+    const row = Math.floor(piece / gridSize);
+    const bgX = (col * 100 / (gridSize - 1));
+    const bgY = (row * 100 / (gridSize - 1));
+    
+    tileEl.dataset.piece = piece;
+    tileEl.style.backgroundImage = `url('${imageUrl}')`;
+    tileEl.style.backgroundSize = `${gridSize * 100}% ${gridSize * 100}%`;
+    tileEl.style.backgroundPosition = `${bgX}% ${bgY}%`;
+  }
+  
+  function updateTilesDirectly(grid, newTiles, oldTiles, gridSize, imageUrl) {
+    newTiles.forEach((piece, pos) => {
+      const tileEl = grid.querySelector(`[data-pos="${pos}"]`);
+      if (!tileEl) return;
+      
+      const oldPiece = oldTiles[pos];
+      
+      // If tile changed, update it
+      if (oldPiece !== undefined && oldPiece !== piece) {
+        updateTileContent(tileEl, piece, gridSize, imageUrl);
+      }
+    });
+  }
+  
+  function updateStats() {
+    const sessionArray = Array.from(sessions.values());
+    
+    activeCount.textContent = sessionArray.length;
+    
+    const moves = sessionArray.reduce((sum, s) => sum + (s.moves || 0), 0);
+    totalMoves.textContent = moves;
+    
+    const avgProg = sessionArray.length > 0
+      ? Math.floor(sessionArray.reduce((sum, s) => sum + (s.progress || 0), 0) / sessionArray.length)
+      : 0;
+    avgProgress.textContent = avgProg + '%';
+    
+    const solved = sessionArray.filter(s => s.solved).length;
+    solvedCount.textContent = solved;
+  }
+  
+  function formatTime(seconds) {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  function getTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 10) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  }
+  
+  // Connect on load
+  connect();
+  
+  // Update "time ago" every second without re-rendering
+  setInterval(() => {
+    sessions.forEach(session => {
+      const card = document.querySelector(`[data-session-id="${session.sessionId}"]`);
+      if (card) {
+        const deviceInfo = card.querySelector('[data-device-info]');
+        if (deviceInfo) {
+          deviceInfo.textContent = `Device: ${session.device || 'Unknown'} | Last Update: ${getTimeAgo(session.lastUpdate)}`;
+        }
+        
+        // Update time stat
+        const timeEl = card.querySelector('[data-stat="time"]');
+        if (timeEl) {
+          timeEl.textContent = formatTime(session.elapsedTime || 0);
+        }
+      }
+    });
+  }, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Image Puzzle</title>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --surface-2: #111111;
+    --border: #333333;
+    --border-soft: #1a1a1a;
+    --text: #ffffff;
+    --text-dim: #888888;
+    --text-faint: #555555;
+    --mono: ui-monospace,"SF Mono","JetBrains Mono","Consolas",monospace;
+    --sans: "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{min-height:100%;min-height:100dvh;background:var(--bg)}
+  body{
+    background:var(--bg);color:var(--text);
+    min-height:100%;min-height:100dvh;
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    width:100%;
+  }
+
+  /* ── Root layout ── */
+  .wrap{
+    min-height:100%;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ── Top bar ── */
+  .top-bar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 14px;
+    border-bottom:1px solid var(--border-soft);
+    flex-shrink:0;
+  }
+  .exit-button{
+    flex-shrink:0;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text);
+    width:40px;height:40px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 0.1s,color 0.1s;
+  }
+  .exit-button svg{width:18px;height:18px;stroke:currentColor;fill:none}
+  .exit-button:hover{background:var(--text);color:var(--bg)}
+  .exit-button:active{opacity:.7}
+  
+  .skip-button{
+    flex-shrink:0;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    padding:0 12px;height:40px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:background 0.1s,color 0.1s,border-color 0.1s;
+    font-family:var(--mono);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+  .skip-button:hover{background:var(--surface-2);border-color:var(--border);color:var(--text)}
+  .skip-button:active{opacity:.7}
+  
+  .level-label{flex:1;min-width:0}
+  .eyebrow{
+    font-family:var(--mono);font-size:9px;
+    letter-spacing:.25em;text-transform:uppercase;
+    color:var(--text-dim);font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  h1{
+    font-size:16px;font-weight:600;
+    letter-spacing:-.01em;color:var(--text);
+    line-height:1;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .subtitle{display:none}
+  
+  .reference-thumbnail {
+    width: 140px;
+    height: 140px;
+    border: 1px solid var(--border);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+  }
+
+  /* ── Game Header (Preview + Stats) ── */
+  .game-header {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 560px;
+    align-items: center;
+    justify-content: center;
+  }
+  .game-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  .stats-row {
+    display: flex;
+    gap: 8px;
+  }
+  .stat-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-soft);
+    background: var(--surface);
+  }
+  .stat-timer {
+    width: 100%;
+  }
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  /* hide legacy stat elements (kept for JS compat) */
+  .panel,.header-row,.controls,.group,.size-btn,.reference-label,
+  #stats,#progressStat,#timeStat,#moveStat{display:none!important}
+
+  /* ── Stage ── */
+  .stage{
+    flex:1;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:12px 14px;gap:10px;
+  }
+
+  /* ── Board ── */
+  .board-wrap{
+    position:relative;flex-shrink:0;
+    /* square that fits the remaining vertical space */
+    width:min(calc(100dvh - 180px),calc(100vw - 28px));
+    aspect-ratio:1/1;
+  }
+  .board{
+    display:grid;width:100%;height:100%;
+    border:1px solid var(--border);
+    overflow:hidden;background:var(--surface-2);
+  }
+  .tile{
+    background-repeat:no-repeat;border:none;
+    cursor:grab;touch-action:none;
+    user-select:none;-webkit-user-select:none;
+    display:block;width:100%;height:100%;
+  }
+  .tile.dragging-source{opacity:.15}
+  .tile.drag-over{
+    outline:2px solid var(--text);outline-offset:-2px;
+    z-index:1;position:relative;
+  }
+  .board.solved .tile{cursor:default}
+
+  /* ── Ghost ── */
+  .ghost{
+    position:fixed;pointer-events:none;z-index:1000;
+    background-repeat:no-repeat;
+    outline:2px solid var(--text);
+    transform:scale(1.04);opacity:.94;
+    will-change:transform;transition:none;
+  }
+  .ghost.returning{
+    transition:all .2s ease-out;transform:scale(1);opacity:0;
+  }
+
+  /* ── Overlay ── */
+  .overlay{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.92);
+    font-family:var(--mono);font-size:11px;
+    color:var(--text-dim);text-align:center;
+    padding:20px;flex-direction:column;gap:12px;
+    text-transform:uppercase;letter-spacing:.1em;
+  }
+  .overlay.hidden{display:none}
+
+  /* ── Win banner ── */
+  .status{
+    font-family:var(--mono);font-size:12px;
+    color:var(--text);text-align:center;
+    opacity:0;transition:opacity .15s ease;
+    display:flex;align-items:center;justify-content:center;
+    gap:8px;flex-wrap:wrap;
+    padding:12px 14px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    width:100%;
+  }
+  .status.status-show{opacity:1}
+
+  /* ── Buttons ── */
+  .btn{
+    background:var(--text);color:var(--bg);
+    border:1px solid var(--text);
+    padding:8px 16px;font-size:11px;font-weight:600;
+    cursor:pointer;font-family:var(--mono);
+    text-transform:uppercase;letter-spacing:.08em;
+    transition:background .1s,color .1s;white-space:nowrap;
+    border-radius: 0;
+  }
+  .btn:hover{background:var(--bg);color:var(--text)}
+  .btn:active{opacity:.7}
+  :focus-visible{outline:2px solid var(--text);outline-offset:2px}
+
+  /* ── Footer ── */
+  footer{
+    font-family:var(--mono);font-size:8px;
+    color:var(--text-faint);text-align:center;
+    letter-spacing:.1em;text-transform:uppercase;
+    padding:5px 14px;border-top:1px solid var(--border-soft);
+    flex-shrink:0;
+  }
+
+  /* ── Solved ── */
+  @keyframes solved-flash{
+    0%,100%{border-color:var(--border)}
+    50%{border-color:var(--text-dim)}
+  }
+  .board.solved{animation:solved-flash 1.2s ease-in-out infinite}
+
+  /* ── Skip Modal ── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.85);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  .modal-backdrop.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 28px 24px 20px;
+    width: min(320px, calc(100vw - 40px));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transform: translateY(8px);
+    transition: transform 0.15s ease;
+  }
+  .modal-backdrop.open .modal {
+    transform: translateY(0);
+  }
+  .modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .modal-body {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 12px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 4px;
+  }
+  .modal-btn {
+    flex: 1;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: background 0.1s, color 0.1s;
+  }
+  .modal-btn-cancel {
+    background: transparent;
+    color: var(--text-dim);
+  }
+  .modal-btn-cancel:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .modal-btn-confirm {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .modal-btn-confirm:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .modal-btn:active { opacity: 0.7; }
+  @keyframes firework-particle{
+    0%{transform:translate(0,0);opacity:1}
+    100%{transform:translate(var(--dx),var(--dy));opacity:0}
+  }
+  .firework-particle{
+    position:fixed;width:5px;height:5px;
+    background:var(--text);pointer-events:none;z-index:999;
+  }
+
+  /* ── Landscape phone ── */
+  @media(orientation:landscape)and(max-height:500px){
+    .top-bar{padding:6px 12px}
+    h1{font-size:15px}
+    .stat-value{font-size:15px}
+    .stat-item{padding:5px 4px}
+    .stage{padding:6px 12px;gap:6px}
+    .board-wrap{
+      width:min(calc(100dvh - 120px),calc(100vw - 24px));
+    }
+    footer{display:none}
+  }
+
+  /* ── Tablet/desktop ── */
+  @media(min-width:640px){
+    h1{font-size:22px}
+    .stat-value{font-size:22px}
+    .stat-item{padding:12px 8px}
+    .stage{padding:20px}
+    .board-wrap{
+      width:min(calc(100dvh - 200px),calc(100vw - 40px),560px);
+    }
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Top bar: back + level name -->
+    <div class="top-bar">
+      <button class="exit-button" id="exitBtn" title="Back to Levels">
+        <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+      </button>
+      <div class="level-label">
+        <div class="eyebrow">Image Puzzle</div>
+        <h1>Level <span id="levelNumber">1</span></h1>
+        <p class="subtitle">Drag tiles to swap and solve</p>
+      </div>
+      <button class="skip-button" id="skipBtn" title="Skip this level">
+        <i data-lucide="skip-forward" style="width: 16px; height: 16px;"></i>
+      </button>
+      <!-- Hidden legacy elements kept for JS compatibility -->
+      <div class="panel" style="display:none">
+        <div class="stats" id="stats">
+          <span class="stat-item"><span class="stat-label">p</span><span id="progressStat">0%</span></span>
+          <span class="stat-item"><span class="stat-label">t</span><span id="timeStat">0:00</span></span>
+          <span class="stat-item stat-full"><span class="stat-label">m</span><span id="moveStat">0</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="stage">
+      <div class="game-header">
+        <div class="reference-thumbnail" id="reference"></div>
+        <div class="game-stats">
+          <div class="stats-row">
+            <div class="stat-item">
+              <span class="stat-label">Progress</span>
+              <span class="stat-value" id="progressStat2">0%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Moves</span>
+              <span class="stat-value" id="moveStat2">0</span>
+            </div>
+          </div>
+          <div class="stat-item stat-timer">
+            <span class="stat-label">Time</span>
+            <span class="stat-value" id="timeStat2">0:00</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+        <div class="overlay" id="overlay">
+          <span>Loading image…</span>
+        </div>
+      </div>
+
+      <div class="status" id="status">
+        <span id="statusText"></span>
+        <button class="btn" id="nextLevelBtn" type="button">Next Level</button>
+        <button class="btn" id="levelsBtn" type="button">Level Select</button>
+      </div>
+    </div>
+
+    <footer>Drag with mouse or touch · runs entirely in your browser</footer>
+  </div>
+
+  <!-- Skip Confirmation Modal -->
+  <div class="modal-backdrop" id="skipModal">
+    <div class="modal">
+      <div class="modal-icon">
+        <i data-lucide="skip-forward" style="width: 18px; height: 18px;"></i>
+      </div>
+      <div class="modal-title">Skip this level?</div>
+      <div class="modal-body">
+        You can come back and complete it later.<br>
+        This will unlock the next level but mark this one as <strong style="color:var(--text-dim)">skipped</strong>.
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="skipCancelBtn">Cancel</button>
+        <button class="modal-btn modal-btn-confirm" id="skipConfirmBtn">Skip Level</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(async function() {
+  let deviceModel = "Unknown";
+  if (navigator.userAgentData) {
+    try {
+      const d = await navigator.userAgentData.getHighEntropyValues(["model"]);
+      if (d.model) deviceModel = d.model;
+    } catch {}
+  }
+  if (!deviceModel || deviceModel === "Unknown") {
+    const ua = navigator.userAgent;
+    const match = ua.match(/\(([^)]+)\)/);
+    deviceModel = match ? match[1] : "Unknown";
+  }
+
+  const boardEl = document.getElementById("board");
+  const overlayEl = document.getElementById("overlay");
+  const referenceEl = document.getElementById("reference");
+  const moveStatEl = document.getElementById("moveStat");
+  const timeStatEl = document.getElementById("timeStat");
+  const progressStatEl = document.getElementById("progressStat");
+  const moveStatEl2 = document.getElementById("moveStat2");
+  const timeStatEl2 = document.getElementById("timeStat2");
+  const progressStatEl2 = document.getElementById("progressStat2");
+  const statusEl = document.getElementById("status");
+  const statusTextEl = document.getElementById("statusText");
+  const nextLevelBtn = document.getElementById("nextLevelBtn");
+  const levelsBtn = document.getElementById("levelsBtn");
+  const levelNumberEl = document.getElementById("levelNumber");
+  const exitBtn = document.getElementById("exitBtn");
+  const skipBtn = document.getElementById("skipBtn");
+
+  let N = 5;
+  let tiles = [];
+  let moves = 0;
+  let solved = false;
+  let startTime = null;
+  let timerInterval = null;
+  let currentImageUrl = null;
+  let sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  let initialShuffledState = []; // Track the shuffled starting positions
+
+  // ---------- server communication ----------
+
+  function sendStatsToServer(data) {
+    data.device = deviceModel;
+    fetch('/stats', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sessionId,
+        timestamp: Date.now(),
+        ...data
+      })
+    }).catch(err => console.log('Stats not sent:', err.message));
+  }
+
+  // ---------- level management ----------
+
+  let currentLevel = 1;
+
+  function getLevelFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return parseInt(params.get('level') || '1', 10);
+  }
+
+  async function getImageForLevel(level) {
+    try {
+      const response = await fetch('/api/levels');
+      const data = await response.json();
+      
+      if (data.levels && data.levels.length >= level) {
+        return data.levels[level - 1].image;
+      }
+      
+      return 'images/1.jpg';
+    } catch (err) {
+      console.error('Error fetching level data:', err);
+      return 'images/1.jpg';
+    }
+  }
+
+  async function isLevelUnlocked(level) {
+    // Level 1 is always unlocked
+    if (level === 1) return true;
+    
+    try {
+      const response = await fetch('/api/progress');
+      const progress = await response.json();
+      
+      // Check if previous level is completed
+      const prevLevel = progress.levels[level - 1];
+      return prevLevel && prevLevel.completed === true;
+    } catch (err) {
+      console.error('Error checking level unlock:', err);
+      return level === 1; // If error, only allow level 1
+    }
+  }
+
+  async function isLevelCompleted(level) {
+    try {
+      const response = await fetch('/api/progress');
+      const progress = await response.json();
+      const levelData = progress.levels[level];
+      return levelData && levelData.completed === true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async function getTotalLevels() {
+    try {
+      const response = await fetch('/api/levels');
+      const data = await response.json();
+      return data.levels ? data.levels.length : 1;
+    } catch (err) {
+      return 1;
+    }
+  }
+
+  async function saveProgress(completed, time, moves, currentState, skipped = false) {
+    try {
+      const progressData = {
+        level: currentLevel,
+        completed,
+        time,
+        moves,
+        timestamp: Date.now(),
+        skipped: skipped || false
+      };
+
+      // If not completed, save the current game state
+      if (!completed && currentState) {
+        progressData.inProgress = {
+          moves,
+          elapsedTime: time,
+          tilePositions: tiles.map(t => parseInt(t.dataset.piece, 10)),
+          startTime: startTime
+        };
+      }
+
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(progressData)
+      });
+    } catch (err) {
+      console.error('Error saving progress:', err);
+    }
+  }
+
+  // Auto-save progress every 10 seconds during gameplay
+  let autoSaveInterval = null;
+
+  function startAutoSave() {
+    if (autoSaveInterval) return;
+    
+    autoSaveInterval = setInterval(() => {
+      if (!solved && startTime) {
+        const currentTime = elapsedSeconds();
+        saveProgress(false, currentTime, moves, true);
+        console.log('Auto-saved progress');
+      }
+    }, 10000); // Save every 10 seconds
+  }
+
+  function stopAutoSave() {
+    if (autoSaveInterval) {
+      clearInterval(autoSaveInterval);
+      autoSaveInterval = null;
+    }
+  }
+
+  function loadImage(url, restoreState, isCompleted = false) {
+    setOverlay(true, restoreState ? "Restoring game…" : "Loading image…");
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    // Add cache buster to prevent loading cached image
+    const cacheBuster = '?t=' + Date.now();
+    const imageUrl = url + cacheBuster;
+    
+    img.onload = () => {
+      setOverlay(false);
+      const squareUrl = cropToSquare(img);
+      currentImageUrl = squareUrl;
+      const ref = document.getElementById("reference");
+      if (ref) ref.style.backgroundImage = 'url("' + squareUrl + '")';
+      
+      if (isCompleted) {
+        showMergedImage(squareUrl);
+      } else {
+        buildBoard(N, squareUrl, restoreState);
+      }
+    };
+    img.onerror = () => {
+      setOverlay(true, "Couldn't load the image. Make sure the image file exists in the directory.", true);
+    };
+    img.src = imageUrl;
+  }
+
+  function showMergedImage(imageUrl) {
+    boardEl.innerHTML = "";
+    boardEl.style.gridTemplateColumns = "1fr";
+    boardEl.classList.add("solved");
+    boardEl.style.animation = "none";
+    
+    const img = document.createElement("div");
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.backgroundImage = 'url("' + imageUrl + '")';
+    img.style.backgroundSize = "cover";
+    img.style.backgroundPosition = "center";
+    boardEl.appendChild(img);
+    
+    solved = true;
+    stopTimer();
+    stopAutoSave();
+    
+    // Hide skip button
+    if (skipBtn) skipBtn.style.display = 'none';
+    
+    statusTextEl.innerHTML = '<i data-lucide="check-circle" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 8px;"></i> Level Completed';
+    lucide.createIcons();
+    statusEl.classList.add("status-show");
+    
+    updateNextLevelButton();
+    
+    // Hide stats in header since it's already completed
+    const statsEl = document.querySelector('.game-stats');
+    if (statsEl) statsEl.style.display = 'none';
+  }
+
+  function cropToSquare(img) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    
+    const size = Math.min(img.width, img.height);
+    canvas.width = size;
+    canvas.height = size;
+    
+    const offsetX = (img.width - size) / 2;
+    const offsetY = (img.height - size) / 2;
+    
+    ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+    
+    return canvas.toDataURL("image/jpeg", 0.95);
+  }
+
+  function setOverlay(show, message, isError) {
+    overlayEl.classList.toggle("hidden", !show);
+    overlayEl.innerHTML = "";
+    if (!show) return;
+    const span = document.createElement("span");
+    span.textContent = message || "Loading image…";
+    overlayEl.appendChild(span);
+    if (isError) {
+      const retry = document.createElement("button");
+      retry.className = "btn";
+      retry.type = "button";
+      retry.textContent = "Retry";
+      retry.addEventListener("click", () => loadImage(getImageFromDirectory()));
+      overlayEl.appendChild(retry);
+    }
+  }
+
+  // ---------- board ----------
+
+  function buildBoard(n, imageUrl, restoreState) {
+    N = n;
+    boardEl.innerHTML = "";
+    boardEl.style.gridTemplateColumns = "repeat(" + n + ", 1fr)";
+    boardEl.classList.remove("solved");
+    tiles = [];
+
+    for (let i = 0; i < n * n; i++) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.dataset.pos = String(i);
+      tile.style.backgroundImage = 'url("' + imageUrl + '")';
+      tile.style.backgroundSize = n * 100 + "% " + n * 100 + "%";
+      tile.addEventListener("pointerdown", onPointerDown);
+      boardEl.appendChild(tile);
+      tiles.push(tile);
+    }
+
+    // Restore previous state or shuffle new game
+    if (restoreState && restoreState.tilePositions) {
+      // Restore saved game state
+      restoreState.tilePositions.forEach((piece, index) => {
+        applyPiece(tiles[index], piece);
+      });
+      initialShuffledState = restoreState.initialShuffledState || restoreState.tilePositions;
+      moves = restoreState.moves || 0;
+      
+      // Restore timer
+      if (restoreState.elapsedTime !== undefined) {
+        startTime = Date.now() - (restoreState.elapsedTime * 1000);
+        if (moves > 0) {
+          startTimer(true);
+        }
+      } else if (restoreState.startTime) {
+        const elapsedMs = Date.now() - restoreState.startTime;
+        startTime = Date.now() - elapsedMs;
+        if (moves > 0) {
+          startTimer(true);
+        }
+      }
+    } else {
+      // New game - shuffle
+      shuffleTiles();
+      moves = 0;
+    }
+    
+    solved = false;
+    statusEl.classList.remove("status-show");
+    if (!restoreState) {
+      resetTimer();
+    }
+    updateStats();
+    
+    // Send initial state to server with tile positions and image
+    sendStatsToServer({
+      level: currentLevel,
+      moves: moves,
+      progress: calculateProgress(),
+      elapsedTime: elapsedSeconds(),
+      solved: false,
+      event: restoreState ? 'game_resumed' : 'game_started',
+      tilePositions: tiles.map(t => parseInt(t.dataset.piece, 10)),
+      gridSize: N,
+      imageUrl: imageUrl,
+      correctTiles: tiles.filter(t => t.dataset.piece === t.dataset.pos).length,
+      totalTiles: tiles.length
+    });
+  }
+
+  function pieceBgPosition(piece) {
+    const col = piece % N;
+    const row = Math.floor(piece / N);
+    const x = (col * 100 / (N - 1));
+    const y = (row * 100 / (N - 1));
+    return x + "% " + y + "%";
+  }
+
+  function applyPiece(tile, piece) {
+    tile.dataset.piece = String(piece);
+    tile.style.backgroundPosition = pieceBgPosition(piece);
+  }
+
+  function shuffleTiles() {
+    const total = N * N;
+    let order;
+    do {
+      order = Array.from({ length: total }, (_, i) => i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = order[i];
+        order[i] = order[j];
+        order[j] = tmp;
+      }
+    } while (total > 1 && order.every((v, i) => v === i));
+    
+    tiles.forEach((tile, i) => applyPiece(tile, order[i]));
+    
+    // Store initial shuffled state
+    initialShuffledState = tiles.map(t => parseInt(t.dataset.piece, 10));
+  }
+
+  function swapTiles(a, b) {
+    const pa = a.dataset.piece;
+    const pb = b.dataset.piece;
+    applyPiece(a, Number(pb));
+    applyPiece(b, Number(pa));
+    
+    // Update progress display (but don't send to server yet)
+    const progress = calculateProgress();
+    progressStatEl.textContent = progress + "%";
+    if (progressStatEl2) progressStatEl2.textContent = progress + "%";
+    
+    // Send ONE complete move update to server for admin monitoring
+    sendStatsToServer({
+      level: currentLevel,
+      moves: moves + 1, // Next move count
+      progress: progress,
+      elapsedTime: elapsedSeconds(),
+      solved: false,
+      correctTiles: tiles.filter(t => t.dataset.piece === t.dataset.pos).length,
+      totalTiles: tiles.length,
+      event: 'move',
+      tilePositions: tiles.map(t => parseInt(t.dataset.piece, 10)),
+      gridSize: N,
+      imageUrl: currentImageUrl,
+      swappedTiles: {
+        tile1: { pos: parseInt(a.dataset.pos), piece: parseInt(pb) },
+        tile2: { pos: parseInt(b.dataset.pos), piece: parseInt(pa) }
+      }
+    });
+    
+    // Save state to localStorage for page refresh recovery
+    saveGameState();
+  }
+
+  // Save current game state to localStorage
+  function saveGameState() {
+    if (solved) return;
+    
+    const gameState = {
+      level: currentLevel,
+      moves: moves,
+      startTime: startTime,
+      elapsedTime: elapsedSeconds(),
+      tilePositions: tiles.map(t => parseInt(t.dataset.piece, 10)),
+      initialShuffledState: initialShuffledState,
+      timestamp: Date.now()
+    };
+    
+    try {
+      localStorage.setItem('puzzleGameState', JSON.stringify(gameState));
+    } catch (err) {
+      console.error('Error saving to localStorage:', err);
+    }
+  }
+
+  // Load game state from localStorage
+  function loadGameState() {
+    try {
+      const savedState = localStorage.getItem('puzzleGameState');
+      if (!savedState) return null;
+      
+      const state = JSON.parse(savedState);
+      
+      // Check if saved state is for current level and recent (within 1 hour)
+      if (state.level === currentLevel && (Date.now() - state.timestamp) < 3600000) {
+        return state;
+      }
+      
+      return null;
+    } catch (err) {
+      console.error('Error loading from localStorage:', err);
+      return null;
+    }
+  }
+
+  // Clear saved game state
+  function clearGameState() {
+    try {
+      localStorage.removeItem('puzzleGameState');
+    } catch (err) {
+      console.error('Error clearing localStorage:', err);
+    }
+  }
+
+  function calculateProgress() {
+    if (!tiles || tiles.length === 0 || initialShuffledState.length === 0) return 0;
+    
+    let improvedCount = 0;
+    const totalTiles = tiles.length;
+    
+    for (let i = 0; i < totalTiles; i++) {
+      const tile = tiles[i];
+      const currentPiece = parseInt(tile.dataset.piece, 10);
+      const correctPosition = parseInt(tile.dataset.pos, 10);
+      const initialPiece = initialShuffledState[i];
+      
+      // If tile is now in correct position but wasn't initially shuffled there
+      if (currentPiece === correctPosition && initialPiece !== correctPosition) {
+        improvedCount++;
+      }
+    }
+    
+    // Calculate how many tiles were initially wrong
+    let initialWrongCount = 0;
+    for (let i = 0; i < totalTiles; i++) {
+      if (initialShuffledState[i] !== i) {
+        initialWrongCount++;
+      }
+    }
+    
+    // Progress = (tiles fixed / tiles that were initially wrong) * 100
+    if (initialWrongCount === 0) return 100; // Already solved (shouldn't happen)
+    
+    const progress = (improvedCount / initialWrongCount) * 100;
+    return Math.floor(progress);
+  }
+
+  function updateProgress() {
+    const progress = calculateProgress();
+    progressStatEl.textContent = progress + "%";
+    if (progressStatEl2) progressStatEl2.textContent = progress + "%";
+    
+    sendStatsToServer({
+      level: currentLevel,
+      moves,
+      progress,
+      elapsedTime: elapsedSeconds(),
+      solved: false,
+      correctTiles: tiles.filter(t => t.dataset.piece === t.dataset.pos).length,
+      totalTiles: tiles.length,
+      tilePositions: tiles.map(t => parseInt(t.dataset.piece, 10)),
+      gridSize: N,
+      imageUrl: currentImageUrl
+    });
+  }
+
+  function checkWin() {
+    const won = tiles.every((t) => t.dataset.piece === t.dataset.pos);
+    if (!won) return;
+    solved = true;
+    stopTimer();
+    stopAutoSave();
+    boardEl.classList.add("solved");
+    
+    // Hide skip button when solved
+    if (skipBtn) skipBtn.style.display = 'none';
+    
+    const timeStr = formatTime(elapsedSeconds());
+    const timeSeconds = elapsedSeconds();
+    statusTextEl.innerHTML = '<i data-lucide="trophy" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 8px;"></i> Puzzle Solved! ' + moves + " move" + (moves === 1 ? "" : "s") + " • " + timeStr;
+    lucide.createIcons();
+    statusEl.classList.add("status-show");
+    
+    // Trigger celebration effects
+    triggerCelebration();
+    
+    // Clear saved game state
+    clearGameState();
+    
+    // Save progress (completed)
+    saveProgress(true, timeSeconds, moves, false);
+    
+    // Update Next Level button visibility
+    updateNextLevelButton();
+    
+    // Send win status to server
+    sendStatsToServer({
+      level: currentLevel,
+      moves,
+      progress: 100,
+      elapsedTime: timeSeconds,
+      solved: true,
+      completedAt: new Date().toISOString()
+    });
+  }
+
+  // ---------- celebration effects ----------
+
+  function triggerCelebration() {
+    // Heavy fireworks for 3 seconds
+    const duration = 3000;
+    const interval = 100; // More frequent for heavier effect
+    const endTime = Date.now() + duration;
+    
+    const fireworkInterval = setInterval(() => {
+      if (Date.now() >= endTime) {
+        clearInterval(fireworkInterval);
+        boardEl.style.animation = '';
+        return;
+      }
+      createFirework();
+    }, interval);
+    
+    // Continuous board glow effect
+    boardEl.style.animation = 'glow-pulse 0.8s ease-in-out infinite';
+  }
+
+  function createFirework() {
+    const boardRect = boardEl.getBoundingClientRect();
+    
+    // Consistent firework positions - spread across the board area
+    const positions = [
+      { x: 0.3, y: 0.3 },
+      { x: 0.7, y: 0.3 },
+      { x: 0.5, y: 0.5 },
+      { x: 0.3, y: 0.7 },
+      { x: 0.7, y: 0.7 }
+    ];
+    
+    const pos = positions[Math.floor(Math.random() * positions.length)];
+    const x = boardRect.left + boardRect.width * pos.x;
+    const y = boardRect.top + boardRect.height * pos.y;
+    
+    // Heavy burst - more particles, consistent pattern
+    const particleCount = 24; // Double the particles for heavy effect
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'firework-particle';
+      particle.style.left = x + 'px';
+      particle.style.top = y + 'px';
+      
+      // Consistent circular pattern
+      const angle = (i / particleCount) * Math.PI * 2;
+      const velocity = 120; // Consistent velocity for uniform look
+      const dx = Math.cos(angle) * velocity;
+      const dy = Math.sin(angle) * velocity;
+      
+      particle.style.setProperty('--dx', dx + 'px');
+      particle.style.setProperty('--dy', dy + 'px');
+      particle.style.animation = 'firework-particle 1.2s ease-out forwards';
+      
+      document.body.appendChild(particle);
+      
+      setTimeout(() => particle.remove(), 1200);
+    }
+  }
+
+  // ---------- drag (pointer events: mouse + touch) ----------
+
+  let dragState = null;
+
+  function onPointerDown(e) {
+    if (solved) return;
+    const tile = e.currentTarget;
+    e.preventDefault();
+    tile.setPointerCapture(e.pointerId);
+
+    const rect = tile.getBoundingClientRect();
+    const ghost = tile.cloneNode(false);
+    ghost.className = "ghost";
+    ghost.style.backgroundImage = tile.style.backgroundImage;
+    ghost.style.backgroundSize = tile.style.backgroundSize;
+    ghost.style.backgroundPosition = tile.style.backgroundPosition;
+    ghost.style.width = rect.width + "px";
+    ghost.style.height = rect.height + "px";
+    ghost.style.left = rect.left + "px";
+    ghost.style.top = rect.top + "px";
+    document.body.appendChild(ghost);
+
+    tile.classList.add("dragging-source");
+
+    dragState = {
+      pointerId: e.pointerId,
+      source: tile,
+      ghost,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      hoverTile: null,
+    };
+
+    tile.addEventListener("pointermove", onPointerMove);
+    tile.addEventListener("pointerup", onPointerUp);
+    tile.addEventListener("pointercancel", onPointerCancel);
+  }
+
+  function onPointerMove(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const { ghost, offsetX, offsetY, source } = dragState;
+    ghost.style.left = e.clientX - offsetX + "px";
+    ghost.style.top = e.clientY - offsetY + "px";
+
+    ghost.style.visibility = "hidden";
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    ghost.style.visibility = "visible";
+
+    const hoverTile = under && under.closest ? under.closest(".tile") : null;
+
+    if (dragState.hoverTile && dragState.hoverTile !== hoverTile) {
+      dragState.hoverTile.classList.remove("drag-over");
+    }
+    if (hoverTile && hoverTile !== source) {
+      hoverTile.classList.add("drag-over");
+      dragState.hoverTile = hoverTile;
+    } else {
+      dragState.hoverTile = null;
+    }
+  }
+
+  function endDrag(e, commit) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const { source, ghost, hoverTile } = dragState;
+
+    source.removeEventListener("pointermove", onPointerMove);
+    source.removeEventListener("pointerup", onPointerUp);
+    source.removeEventListener("pointercancel", onPointerCancel);
+    try { source.releasePointerCapture(dragState.pointerId); } catch (err) {}
+
+    if (hoverTile) hoverTile.classList.remove("drag-over");
+
+    if (commit && hoverTile && hoverTile !== source) {
+      // Valid swap - animate ghost to target position
+      const targetRect = hoverTile.getBoundingClientRect();
+      ghost.classList.add("returning");
+      ghost.style.left = targetRect.left + "px";
+      ghost.style.top = targetRect.top + "px";
+      
+      setTimeout(() => {
+        ghost.remove();
+        source.classList.remove("dragging-source");
+      }, 300);
+      
+      swapTiles(source, hoverTile);
+      moves++;
+      if (moves === 1) startTimer();
+      updateStats();
+      checkWin();
+    } else {
+      // No swap - animate ghost back to source position
+      const sourceRect = source.getBoundingClientRect();
+      ghost.classList.add("returning");
+      ghost.style.left = sourceRect.left + "px";
+      ghost.style.top = sourceRect.top + "px";
+      
+      setTimeout(() => {
+        ghost.remove();
+        source.classList.remove("dragging-source");
+      }, 300);
+    }
+    
+    dragState = null;
+  }
+
+  function onPointerUp(e) { endDrag(e, true); }
+  function onPointerCancel(e) { endDrag(e, false); }
+
+  // ---------- stats / timer ----------
+
+  function elapsedSeconds() {
+    return startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+  }
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ":" + String(r).padStart(2, "0");
+  }
+
+  function startTimer(isResume = false) {
+    if (!isResume) startTime = Date.now();
+    if (!timerInterval) timerInterval = setInterval(updateStats, 500);
+    startAutoSave(); // Start auto-saving when timer starts
+  }
+
+  function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+    stopAutoSave(); // Stop auto-saving when timer stops
+  }
+
+  function resetTimer() {
+    stopTimer();
+    startTime = null;
+  }
+
+  function updateStats() {
+    const t = formatTime(elapsedSeconds());
+    const p = calculateProgress() + "%";
+    const m = String(moves);
+    moveStatEl.textContent = m;
+    timeStatEl.textContent = t;
+    progressStatEl.textContent = p;
+    if (moveStatEl2) moveStatEl2.textContent = m;
+    if (timeStatEl2) timeStatEl2.textContent = t;
+    if (progressStatEl2) progressStatEl2.textContent = p;
+  }
+
+  // ---------- controls ----------
+
+  async function updateNextLevelButton() {
+    const totalLevels = await getTotalLevels();
+    if (currentLevel >= totalLevels) {
+      nextLevelBtn.style.display = 'none';
+      // Change text on levels button
+      levelsBtn.textContent = 'Back to Levels';
+    } else {
+      nextLevelBtn.style.display = 'inline-block';
+    }
+  }
+
+  // Exit button - save and go to levels
+  exitBtn.addEventListener("click", async () => {
+    // Save current state if game is in progress
+    if (!solved && startTime && moves > 0) {
+      const currentTime = elapsedSeconds();
+      await saveProgress(false, currentTime, moves, true);
+      saveGameState();
+    }
+    
+    // Navigate to levels
+    location.href = 'levels.html';
+  });
+
+  // Skip modal
+  const skipModal = document.getElementById("skipModal");
+  const skipCancelBtn = document.getElementById("skipCancelBtn");
+  const skipConfirmBtn = document.getElementById("skipConfirmBtn");
+
+  function openSkipModal() {
+    skipModal.classList.add("open");
+    lucide.createIcons();
+  }
+  function closeSkipModal() {
+    skipModal.classList.remove("open");
+  }
+
+  skipCancelBtn.addEventListener("click", closeSkipModal);
+  skipModal.addEventListener("click", (e) => {
+    if (e.target === skipModal) closeSkipModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && skipModal.classList.contains("open")) closeSkipModal();
+  });
+
+  skipConfirmBtn.addEventListener("click", async () => {
+    closeSkipModal();
+    
+    if (solved) return;
+    solved = true;
+    stopTimer();
+    stopAutoSave();
+    
+    const currentTime = elapsedSeconds();
+    await saveProgress(true, currentTime, moves, false, true);
+    clearGameState();
+    
+    // Hide skip button
+    skipBtn.style.display = 'none';
+    
+    statusTextEl.innerHTML = '<i data-lucide="skip-forward" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 8px;"></i> Level Skipped';
+    lucide.createIcons();
+    statusEl.classList.add("status-show");
+    
+    updateNextLevelButton();
+    
+    sendStatsToServer({
+      level: currentLevel,
+      moves,
+      progress: calculateProgress(),
+      elapsedTime: currentTime,
+      solved: false,
+      skipped: true,
+      event: 'level_skipped'
+    });
+  });
+
+  // Skip button - opens modal
+  skipBtn.addEventListener("click", () => {
+    if (solved) return;
+    openSkipModal();
+  });
+
+  nextLevelBtn.addEventListener("click", async () => {
+    const nextLevel = currentLevel + 1;
+    // Check if next level exists
+    const totalLevels = await getTotalLevels();
+    if (nextLevel <= totalLevels) {
+      clearGameState(); // Clear saved state when moving to next level
+      location.href = `game.html?level=${nextLevel}`;
+    }
+  });
+
+  levelsBtn.addEventListener("click", async () => {
+    // Clear saved state when going back to levels
+    clearGameState();
+    
+    // Show unlock notification if we just completed a level that unlocks the next
+    const totalLevels = await getTotalLevels();
+    const nextLevel = currentLevel + 1;
+    
+    if (solved && nextLevel <= totalLevels) {
+      location.href = `levels.html?unlocked=${nextLevel}`;
+    } else {
+      location.href = 'levels.html';
+    }
+  });
+
+  // Handle page visibility change (tab switch, minimize)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && !solved && startTime) {
+      // Save progress when page becomes hidden
+      const currentTime = elapsedSeconds();
+      saveProgress(false, currentTime, moves, true);
+      console.log('Saved progress (tab hidden)');
+    }
+  });
+
+  // Handle page unload (close, refresh, navigate away)
+  window.addEventListener('beforeunload', (e) => {
+    if (!solved && startTime && moves > 0) {
+      // Save progress before leaving
+      const currentTime = elapsedSeconds();
+      saveProgress(false, currentTime, moves, true);
+      saveGameState(); // Also save to localStorage
+      
+      // Show warning dialog (browsers may or may not show this)
+      const message = 'Game in progress. Progress will be saved.';
+      e.preventDefault();
+      e.returnValue = message;
+      return message;
+    }
+  });
+
+  // ---------- init ----------
+
+  (async function init() {
+    currentLevel = getLevelFromURL();
+    levelNumberEl.textContent = currentLevel;
+    
+    // Check if level is unlocked
+    const unlocked = await isLevelUnlocked(currentLevel);
+    if (!unlocked) {
+      setOverlay(true, `Level ${currentLevel} is locked. Complete Level ${currentLevel - 1} first.`);
+      // Show button to go back to level selection
+      const backBtn = document.createElement("button");
+      backBtn.className = "btn";
+      backBtn.type = "button";
+      backBtn.textContent = "Back to Levels";
+      backBtn.addEventListener("click", () => location.href = 'levels.html');
+      overlayEl.appendChild(backBtn);
+      return;
+    }
+    
+    // Check for saved game state
+    const savedState = loadGameState();
+    
+    const img = await getImageForLevel(currentLevel);
+    const completed = await isLevelCompleted(currentLevel);
+    loadImage(img, savedState, completed);
+    
+    // Hide next level button initially
+    nextLevelBtn.style.display = 'none';
+    
+    // Show restore notification if game was restored
+    if (savedState) {
+      setTimeout(() => {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: var(--surface);
+          border: 2px solid var(--border);
+          color: var(--text);
+          padding: 12px 24px;
+          font-family: var(--mono);
+          font-size: 12px;
+          z-index: 1000;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          white-space: nowrap;
+        `;
+        notification.textContent = `Game restored: ${savedState.moves} moves, ${formatTime(savedState.elapsedTime)}`;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.style.transition = 'opacity 0.3s ease-out';
+          notification.style.opacity = '0';
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }, 500);
+    }
+  })();
+})();
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>

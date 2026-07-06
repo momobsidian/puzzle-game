@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<title>Image Puzzle</title>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --border: #333333;
+    --border-soft: #1a1a1a;
+    --text: #ffffff;
+    --text-dim: #888888;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Consolas", monospace;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    min-height: 100%;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(40px, env(safe-area-inset-top)) max(40px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(40px, env(safe-area-inset-left));
+  }
+
+  .container {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  /* ── Top label ── */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 28px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Heading ── */
+  h1 {
+    font-size: clamp(52px, 12vw, 96px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    line-height: 0.9;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+
+  /* ── Accent separator ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--border-soft); }
+  .divider-dot  { width: 4px; height: 4px; background: var(--border); flex-shrink: 0; }
+
+  /* ── Tagline ── */
+  .tagline {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 44px;
+    max-width: 34ch;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── CTA ── */
+  .play-button {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    padding: 16px 44px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    transition: background 0.12s, color 0.12s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 56px;
+  }
+  .play-button i { width: 14px; height: 14px; }
+  .play-button:hover { background: var(--bg); color: var(--text); outline: 1px solid var(--border); }
+  .play-button:active { opacity: 0.75; }
+
+  /* ── Admin Link ── */
+  .admin-link {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 8px 16px;
+    border: 1px solid var(--border-soft);
+    background: var(--surface);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .admin-link:hover {
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  /* ── Stats ── */
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--border-soft);
+    border-left: 1px solid var(--border-soft);
+  }
+  .meta-item {
+    padding: 16px;
+    border-right: 1px solid var(--border-soft);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .meta-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+  .meta-value {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 32px 24px; }
+    h1 { font-size: 56px; margin-bottom: 28px; }
+    .tagline { margin-bottom: 32px; font-size: 13px; }
+    .play-button { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="eyebrow">Image Puzzle</div>
+    <h1>Piece<br>It<br>Together</h1>
+    <div class="divider"><div class="divider-line"></div><div class="divider-dot"></div><div class="divider-line"></div></div>
+    <p class="tagline">
+      Drag tiles to swap. Solve the image. Unlock the next level.
+    </p>
+    <button class="play-button" onclick="location.href='levels.html'">
+      <i data-lucide="play"></i>
+      Play Now
+    </button>
+    <div class="meta" id="meta">
+      <div class="meta-item">
+        <div class="meta-label">Levels</div>
+        <div class="meta-value" id="metaLevels">—</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Completed</div>
+        <div class="meta-value" id="metaCompleted">—</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Remaining</div>
+        <div class="meta-value" id="metaRemaining">—</div>
+      </div>
+    </div>
+  </div>
+
+  <a href="admin.html" class="admin-link">
+    <i data-lucide="monitor" style="width: 12px; height: 12px;"></i>
+    Admin Panel
+  </a>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+  (async function() {
+    try {
+      const [levelsRes, progressRes] = await Promise.all([
+        fetch('/api/levels'),
+        fetch('/api/progress')
+      ]);
+      const { levels } = await levelsRes.json();
+      const { levels: prog } = await progressRes.json();
+      const total = levels.length;
+      const completed = Object.values(prog).filter(l => l.completed).length;
+      document.getElementById('metaLevels').textContent = total;
+      document.getElementById('metaCompleted').textContent = completed;
+      document.getElementById('metaRemaining').textContent = total - completed;
+    } catch(e) {
+      document.getElementById('meta').style.display = 'none';
+    }
+  })();
+</script>
+</body>
+</html>
