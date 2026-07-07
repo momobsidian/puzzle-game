@@ -760,7 +760,7 @@
     }
 
     // Restore previous state or shuffle new game
-    if (restoreState && restoreState.tilePositions) {
+    if (restoreState && restoreState.tilePositions && restoreState.tilePositions.length === n * n) {
       // Restore saved game state
       restoreState.tilePositions.forEach((piece, index) => {
         applyPiece(tiles[index], piece);
@@ -813,14 +813,26 @@
   function pieceBgPosition(piece) {
     const col = piece % N;
     const row = Math.floor(piece / N);
-    const x = (col * 100 / (N - 1));
-    const y = (row * 100 / (N - 1));
+    // background-size = N*100% means the image is N times the tile size.
+    // To show the correct slice, shift by exactly col/N and row/N of the full image.
+    // Using calc with percentages of the container avoids float rounding issues.
+    // background-position: x% y% where:
+    //   x% = (col / (N-1)) * 100  -- maps 0..N-1 cols to 0%..100%
+    // This is correct ONLY when background-size = N*100%.
+    // The real issue for non-5 grids: use toFixed to avoid sub-pixel drift.
+    const x = N === 1 ? 0 : parseFloat((col * 100 / (N - 1)).toFixed(4));
+    const y = N === 1 ? 0 : parseFloat((row * 100 / (N - 1)).toFixed(4));
     return x + "% " + y + "%";
   }
-
+  
   function applyPiece(tile, piece) {
     tile.dataset.piece = String(piece);
-    tile.style.backgroundPosition = pieceBgPosition(piece);
+    const col = parseInt(piece) % N;
+    const row = Math.floor(parseInt(piece) / N);
+    // Recalculate directly without formula wrapper to avoid stale N
+    const x = N === 1 ? 0 : parseFloat((col * 100 / (N - 1)).toFixed(4));
+    const y = N === 1 ? 0 : parseFloat((row * 100 / (N - 1)).toFixed(4));
+    tile.style.backgroundPosition = x + "% " + y + "%";
   }
 
   function shuffleTiles() {
@@ -905,11 +917,19 @@
       
       const state = JSON.parse(savedState);
       
-      // Check if saved state is for current level and recent (within 1 hour)
-      if (state.level === currentLevel && (Date.now() - state.timestamp) < 3600000) {
+      // Check level, recency, AND that tile count matches current grid size
+      const expectedTiles = N * N;
+      if (
+        state.level === currentLevel &&
+        (Date.now() - state.timestamp) < 3600000 &&
+        state.tilePositions &&
+        state.tilePositions.length === expectedTiles
+      ) {
         return state;
       }
       
+      // Stale or mismatched state — clear it
+      localStorage.removeItem('puzzleGameState');
       return null;
     } catch (err) {
       console.error('Error loading from localStorage:', err);
