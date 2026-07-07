@@ -627,7 +627,7 @@
     sessionsContainer.innerHTML = sessionArray.map(session => {
       const isStale = now - session.lastUpdate > 30000;
       const isSolved = session.solved || false;
-      const gridSize = session.gridSize || 10; // Default to 10x10
+      const gridSize = session.gridSize || 8; // Default to 8x8
       
       // Generate tile grid HTML
       let tileGridHTML = '';
@@ -684,7 +684,7 @@
             </div>
             <div class="stat-item">
               <div class="stat-label">Correct</div>
-              <div class="stat-value" data-stat="correct">${session.correctTiles || 0}/${session.totalTiles || 100}</div>
+              <div class="stat-value" data-stat="correct">${session.correctTiles || 0}/${session.totalTiles || 64}</div>
             </div>
             <div class="stat-item">
               <div class="stat-label">Event</div>
@@ -719,7 +719,7 @@
     
     if (movesEl) movesEl.textContent = newSession.moves || 0;
     if (timeEl) timeEl.textContent = formatTime(newSession.elapsedTime || 0);
-    if (correctEl) correctEl.textContent = `${newSession.correctTiles || 0}/${newSession.totalTiles || 100}`;
+    if (correctEl) correctEl.textContent = `${newSession.correctTiles || 0}/${newSession.totalTiles || 64}`;
     if (eventEl) eventEl.textContent = newSession.event || 'Playing';
     
     // Update progress bar
@@ -762,7 +762,7 @@
     const grid = card.querySelector(`[data-session="${newSession.sessionId}"]`);
     if (!grid) return;
     
-    const gridSize = newSession.gridSize || 10;
+    const gridSize = newSession.gridSize || 8;
     const newTiles = newSession.tilePositions;
     const oldTiles = oldSession?.tilePositions || [];
     const swappedTiles = newSession.swappedTiles;
