@@ -515,6 +515,18 @@
 
   // ---------- server communication ----------
 
+  function blockDevice() {
+    document.body.innerHTML = `
+      <div style="display:flex;height:100dvh;align-items:center;justify-content:center;flex-direction:column;gap:20px;text-align:center;padding:20px;">
+        <h1 style="color:var(--text);font-size:24px;">Access Denied</h1>
+        <p style="color:var(--text-dim);">Someone else is already playing on another device.</p>
+        <p style="color:var(--text-dim);font-size:12px;">Please wait until they finish or close their session.</p>
+      </div>
+    `;
+    stopTimer();
+    stopAutoSave();
+  }
+
   function sendStatsToServer(data) {
     data.device = deviceModel;
     fetch('/stats', {
@@ -527,7 +539,11 @@
         timestamp: Date.now(),
         ...data
       })
-    }).catch(err => console.log('Stats not sent:', err.message));
+    })
+    .then(res => {
+      if (res.status === 403) blockDevice();
+    })
+    .catch(err => console.log('Stats not sent:', err.message));
   }
 
   // ---------- level management ----------
@@ -596,6 +612,7 @@
   async function saveProgress(completed, time, moves, currentState, skipped = false) {
     try {
       const progressData = {
+        sessionId,
         level: currentLevel,
         completed,
         time,
@@ -614,11 +631,15 @@
         };
       }
 
-      await fetch('/api/progress', {
+      const response = await fetch('/api/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(progressData)
       });
+      
+      if (response.status === 403) {
+        blockDevice();
+      }
     } catch (err) {
       console.error('Error saving progress:', err);
     }
@@ -1332,6 +1353,19 @@
   // ---------- init ----------
 
   (async function init() {
+    // Check session first
+    try {
+      const res = await fetch('/api/check-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      if (res.status === 403) {
+        blockDevice();
+        return;
+      }
+    } catch (e) {}
+
     currentLevel = getLevelFromURL();
     levelNumberEl.textContent = currentLevel;
     
