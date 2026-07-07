@@ -332,7 +332,7 @@ const server = http.createServer((req, res) => {
         const ip = getClientIp(req);
         activeSessions.set(ip, {
           ...stats,
-          ip: ip,
+          sessionId: ip,
           lastUpdate: Date.now()
         });
         
