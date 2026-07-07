@@ -45,6 +45,9 @@ function getClientIp(req) {
   if (typeof ip === 'string' && ip.includes(',')) {
     ip = ip.split(',')[0].trim();
   }
+  if (ip === '::1' || ip === '::ffff:127.0.0.1') {
+    ip = '127.0.0.1';
+  }
   return ip || 'unknown';
 }
 
@@ -55,6 +58,7 @@ function isSessionAllowed(req) {
   const staleThreshold = 60000; // 1 minute
   for (const session of activeSessions.values()) {
     if (session.ip !== ip && (now - session.lastUpdate <= staleThreshold)) {
+      console.log(`\x1b[31mBLOCKED: Another session is active. Active IP: ${session.ip}, New Request IP: ${ip}\x1b[0m`);
       return false; // Another session is active
     }
   }
