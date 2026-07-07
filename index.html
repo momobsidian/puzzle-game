@@ -4,28 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#172e1d">
 <title>Image Puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #000000;
-    --surface: #0a0a0a;
-    --border: #333333;
-    --border-soft: #1a1a1a;
-    --text: #ffffff;
-    --text-dim: #888888;
-    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Consolas", monospace;
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --felt: #2a5035;
+    --felt-light: #366143;
+    --felt-dark: #172e1d;
+    --wood: #5c3a21;
+    --wood-dark: #3b2210;
+    --wood-light: #7a4e2d;
+    --gold: #ffd700;
+    --gold-light: #f7dfa5;
+    --gold-mid: #e0b753;
+    --gold-shadow: #9c7722;
+    --silver: #e0e0e0;
+    --silver-mid: #a3a3a3;
+    --silver-shadow: #7a7a7a;
+    --text-dark: #4a2e1a;
+    --text-light: #fff;
+    --text-dim: #d4c5a9;
+    --inset-bg: rgba(0,0,0,0.35);
+    --game-font: 'Fredoka One', 'Trebuchet MS', cursive;
+    --body-font: 'Nunito', 'Trebuchet MS', Arial, sans-serif;
+  }
 
   html, body {
     min-height: 100%;
     min-height: 100dvh;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
+    background-color: var(--felt);
+    background-image: radial-gradient(circle at center, var(--felt-light) 0%, var(--felt-dark) 100%);
+    font-family: var(--body-font);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -33,149 +46,208 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: max(40px, env(safe-area-inset-top)) max(40px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(40px, env(safe-area-inset-left));
+    padding: max(32px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   }
 
+  /* ── Wood Panel Container ── */
   .container {
     width: 100%;
-    max-width: 480px;
+    max-width: 460px;
+    background-color: var(--wood);
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(0,0,0,0.07),
+      rgba(0,0,0,0.07) 10px,
+      transparent 10px,
+      transparent 20px
+    );
+    border-radius: 16px;
+    padding: 36px 32px 32px;
+    box-shadow:
+      inset 0 0 20px rgba(0,0,0,0.7),
+      0 20px 40px rgba(0,0,0,0.6),
+      0 0 0 8px var(--wood-dark),
+      0 0 0 10px rgba(255,215,0,0.08);
+    position: relative;
   }
+
+  /* ── Corner nail decorations ── */
+  .container::before,
+  .container::after {
+    content: '●';
+    position: absolute;
+    font-size: 10px;
+    color: var(--gold-shadow);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+  .container::before { top: 12px; left: 14px; }
+  .container::after  { top: 12px; right: 14px; }
 
   /* ── Top label ── */
   .eyebrow {
-    font-family: var(--mono);
-    font-size: 10px;
+    font-family: var(--body-font);
+    font-size: 11px;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: var(--text-dim);
-    font-weight: 600;
-    margin-bottom: 24px;
+    color: var(--gold-mid);
+    font-weight: 700;
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   }
-  .eyebrow::before {
+  .eyebrow::before, .eyebrow::after {
     content: '';
-    display: inline-block;
-    width: 28px;
+    flex: 1;
     height: 1px;
-    background: var(--border);
+    background: linear-gradient(to right, transparent, var(--gold-shadow), transparent);
   }
 
   /* ── Heading ── */
   h1 {
-    font-size: clamp(52px, 12vw, 96px);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    color: var(--text);
-    line-height: 0.9;
+    font-family: var(--game-font);
+    font-size: clamp(32px, 9vw, 60px);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    line-height: 0.95;
     text-transform: uppercase;
-    margin-bottom: 36px;
+    margin-bottom: 28px;
+    text-shadow:
+      3px 3px 0px var(--gold-shadow),
+      0 4px 12px rgba(0,0,0,0.7),
+      0 0 40px rgba(255,215,0,0.15);
   }
 
-  /* ── Accent separator ── */
+  /* ── Divider ── */
   .divider {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
+    gap: 10px;
+    margin-bottom: 20px;
   }
-  .divider-line { flex: 1; height: 1px; background: var(--border-soft); }
-  .divider-dot  { width: 4px; height: 4px; background: var(--border); flex-shrink: 0; }
+  .divider-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--gold-shadow), transparent); }
+  .divider-dot  { width: 6px; height: 6px; background: var(--gold-mid); border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px rgba(255,215,0,0.5); }
 
   /* ── Tagline ── */
   .tagline {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-dim);
     line-height: 1.7;
-    margin-bottom: 44px;
-    max-width: 34ch;
-    font-weight: 400;
-    letter-spacing: 0.01em;
+    margin-bottom: 32px;
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
 
-  /* ── CTA ── */
+  /* ── 3D Gold CTA Button ── */
   .play-button {
-    background: var(--text);
-    color: var(--bg);
-    border: none;
-    padding: 16px 44px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    transition: background 0.12s, color 0.12s;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
-    margin-bottom: 56px;
+    width: 100%;
+    background: linear-gradient(to bottom, #f7dfa5, #e0b753);
+    border: none;
+    border-radius: 10px;
+    padding: 16px 28px;
+    font-family: var(--game-font);
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
+    cursor: pointer;
+    box-shadow:
+      0 6px 0 var(--gold-shadow),
+      0 10px 20px rgba(0,0,0,0.5);
+    transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+    user-select: none;
+    margin-bottom: 28px;
   }
-  .play-button i { width: 14px; height: 14px; }
-  .play-button:hover { background: var(--bg); color: var(--text); outline: 1px solid var(--border); }
-  .play-button:active { opacity: 0.75; }
+  .play-button i { width: 20px; height: 20px; }
+  .play-button:hover {
+    background: linear-gradient(to bottom, #ffe5b4, #e8c860);
+  }
+  .play-button:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 var(--gold-shadow), 0 4px 6px rgba(0,0,0,0.4);
+  }
+
+  /* ── Stats Grid (Inset Wood Panel) ── */
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .meta-item {
+    background: var(--inset-bg);
+    border: 1px solid rgba(0,0,0,0.5);
+    border-radius: 6px;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06);
+    text-align: center;
+  }
+  .meta-label {
+    font-family: var(--body-font);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--gold-mid);
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  }
+  .meta-value {
+    font-family: var(--game-font);
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--text-light);
+    line-height: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+  }
 
   /* ── Admin Link ── */
   .admin-link {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    font-family: var(--mono);
+    font-family: var(--body-font);
     font-size: 10px;
-    color: var(--text-dim);
+    color: var(--gold-mid);
     text-decoration: none;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 8px 16px;
-    border: 1px solid var(--border-soft);
-    background: var(--surface);
-    transition: all 0.15s;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    padding: 8px 14px;
+    background: var(--wood-dark);
+    border: 1px solid var(--gold-shadow);
+    border-radius: 6px;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 6px 12px rgba(0,0,0,0.4);
+    transition: all 0.1s;
     display: flex;
     align-items: center;
     gap: 6px;
   }
   .admin-link:hover {
-    color: var(--text);
-    border-color: var(--border);
+    color: var(--gold);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.4);
   }
-
-  /* ── Stats ── */
-  .meta {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid var(--border-soft);
-    border-left: 1px solid var(--border-soft);
-  }
-  .meta-item {
-    padding: 16px;
-    border-right: 1px solid var(--border-soft);
-    border-bottom: 1px solid var(--border-soft);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .meta-label {
-    font-family: var(--mono);
-    font-size: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.25em;
-    color: var(--text-dim);
-    font-weight: 700;
-  }
-  .meta-value {
-    font-family: var(--mono);
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
+  .admin-link:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.5);
   }
 
   @media (max-width: 480px) {
-    body { padding: 32px 24px; }
-    h1 { font-size: 56px; margin-bottom: 28px; }
-    .tagline { margin-bottom: 32px; font-size: 13px; }
-    .play-button { width: 100%; justify-content: center; }
+    body { padding: 20px 16px; }
+    .container { padding: 28px 20px 24px; border-radius: 12px; }
+    h1 { font-size: 48px; margin-bottom: 20px; }
+    .play-button { font-size: 17px; }
   }
 </style>
 </head>
@@ -197,11 +269,11 @@
         <div class="meta-value" id="metaLevels">—</div>
       </div>
       <div class="meta-item">
-        <div class="meta-label">Completed</div>
+        <div class="meta-label">Done</div>
         <div class="meta-value" id="metaCompleted">—</div>
       </div>
       <div class="meta-item">
-        <div class="meta-label">Remaining</div>
+        <div class="meta-label">Left</div>
         <div class="meta-value" id="metaRemaining">—</div>
       </div>
     </div>
@@ -209,7 +281,7 @@
 
   <a href="admin.html" class="admin-link">
     <i data-lucide="monitor" style="width: 12px; height: 12px;"></i>
-    Admin Panel
+    Admin
   </a>
 
 <script src="https://unpkg.com/lucide@latest"></script>

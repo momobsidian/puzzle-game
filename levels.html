@@ -4,30 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#172e1d">
 <title>Select Level - Image Puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --bg: #000000;
-    --surface: #0a0a0a;
-    --surface-2: #111111;
-    --border: #333333;
-    --border-soft: #1a1a1a;
-    --text: #ffffff;
-    --text-dim: #888888;
-    --text-faint: #444444;
-    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Consolas", monospace;
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --felt: #2a5035;
+    --felt-light: #366143;
+    --felt-dark: #172e1d;
+    --wood: #5c3a21;
+    --wood-dark: #3b2210;
+    --wood-light: #7a4e2d;
+    --gold: #ffd700;
+    --gold-light: #f7dfa5;
+    --gold-mid: #e0b753;
+    --gold-shadow: #9c7722;
+    --silver: #e0e0e0;
+    --silver-mid: #a3a3a3;
+    --silver-shadow: #7a7a7a;
+    --text-dark: #4a2e1a;
+    --text-light: #fff;
+    --text-dim: #d4c5a9;
+    --text-faint: #8a7560;
+    --inset-bg: rgba(0,0,0,0.35);
+    --game-font: 'Fredoka One', 'Trebuchet MS', cursive;
+    --body-font: 'Nunito', 'Trebuchet MS', Arial, sans-serif;
   }
 
-  * { box-sizing: border-box; }
-  
   html, body {
     min-height: 100%;
     margin: 0; padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
+    background-color: var(--felt);
+    background-image: radial-gradient(circle at center, var(--felt-light) 0%, var(--felt-dark) 100%);
+    font-family: var(--body-font);
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
@@ -36,72 +48,96 @@
     padding: max(0px, env(safe-area-inset-top)) max(0px, env(safe-area-inset-right)) max(0px, env(safe-area-inset-bottom)) max(0px, env(safe-area-inset-left));
   }
 
-  /* ── Sticky header ── */
+  /* ── Sticky header (Wood panel) ── */
   .header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border-soft);
-    padding: 12px 20px 0;
+    background-color: var(--wood-dark);
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(0,0,0,0.12),
+      rgba(0,0,0,0.12) 8px,
+      transparent 8px,
+      transparent 16px
+    );
+    border-bottom: 3px solid var(--gold-shadow);
+    padding: 10px 16px 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 1px 0 rgba(255,215,0,0.1);
   }
 
   .header-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
+  /* ── 3D Back Button ── */
   .back-button {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
+    background: linear-gradient(to bottom, var(--silver), var(--silver-mid));
+    border: none;
+    border-radius: 8px;
+    color: #333;
     padding: 8px 16px;
-    font-size: 11px;
-    font-weight: 600;
+    font-family: var(--game-font);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
     cursor: pointer;
-    font-family: var(--mono);
-    letter-spacing: 0.08em;
     display: flex;
     align-items: center;
     gap: 6px;
     text-transform: uppercase;
+    box-shadow: 0 4px 0 var(--silver-shadow), 0 6px 12px rgba(0,0,0,0.4);
+    transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
   }
-  .back-button:hover { background: var(--text); color: var(--bg); }
-  .back-button:active { opacity: 0.75; }
+  .back-button:hover {
+    background: linear-gradient(to bottom, #eee, #b8b8b8);
+  }
+  .back-button:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--silver-shadow), 0 2px 4px rgba(0,0,0,0.3);
+  }
 
   .header-title-block { text-align: right; }
 
   h1 {
-    font-size: 22px;
-    font-weight: 800;
+    font-family: var(--game-font);
+    font-size: 26px;
+    font-weight: 400;
     margin: 0;
-    letter-spacing: -0.02em;
-    color: var(--text);
+    letter-spacing: 0.04em;
+    color: var(--gold);
     line-height: 1;
     text-transform: uppercase;
+    text-shadow: 2px 2px 0px var(--gold-shadow), 0 3px 8px rgba(0,0,0,0.6);
   }
   .header-sub {
-    font-family: var(--mono);
+    font-family: var(--body-font);
     font-size: 9px;
     letter-spacing: 0.2em;
-    color: var(--text-dim);
+    color: var(--gold-mid);
     text-transform: uppercase;
     margin-top: 2px;
+    font-weight: 700;
   }
 
-  /* ── Progress bar (flush to header bottom) ── */
+  /* ── Gold Progress bar ── */
   .progress-bar-container {
-    height: 2px;
-    background: var(--surface-2);
+    height: 4px;
+    background: rgba(0,0,0,0.5);
     width: 100%;
     overflow: hidden;
+    border-radius: 2px;
   }
   .progress-bar {
     height: 100%;
-    background: var(--text);
+    background: linear-gradient(to right, var(--gold-shadow), var(--gold), var(--gold-mid));
     transition: width 0.4s ease;
+    box-shadow: 0 0 8px rgba(255,215,0,0.4);
   }
 
   /* ── Progress label ── */
@@ -109,50 +145,73 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 20px 12px;
-    font-family: var(--mono);
-    font-size: 9px;
-    color: var(--text-dim);
+    padding: 5px 0 10px;
+    font-family: var(--body-font);
+    font-size: 10px;
+    color: var(--gold-mid);
     text-transform: uppercase;
     letter-spacing: 0.15em;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
   }
 
   /* ── Grid ── */
-  .container { padding: 0 12px 80px; }
+  .container { padding: 16px 12px 80px; }
 
   .levels-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    gap: 10px;
     padding: 16px 0;
   }
 
-  /* ── Card ── */
+  /* ── Level Card (3D Wood Style) ── */
   .level-card {
-    background: var(--surface);
-    border: 1px solid var(--border-soft);
+    background-color: var(--wood);
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(0,0,0,0.06),
+      rgba(0,0,0,0.06) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    border: 2px solid var(--wood-light);
+    border-radius: 8px;
     cursor: pointer;
     position: relative;
     overflow: hidden;
     aspect-ratio: 1/1;
     display: flex;
     flex-direction: column;
-    transition: border-color 0.12s;
+    box-shadow:
+      0 4px 0 var(--wood-dark),
+      0 6px 12px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    transition: transform 0.1s, box-shadow 0.1s;
   }
-  .level-card:hover { border-color: var(--border); }
-  .level-card:active { opacity: 0.8; }
+  .level-card:hover {
+    border-color: var(--gold-mid);
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 0 var(--wood-dark),
+      0 10px 20px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .level-card:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--wood-dark), 0 2px 6px rgba(0,0,0,0.3);
+  }
 
   .level-card.completed {
-    border-color: var(--border);
-    background: var(--surface);
+    border-color: var(--gold-shadow);
   }
-  .level-card.completed .level-preview { opacity: 0.7; }
+  .level-card.completed .level-preview { opacity: 0.85; }
 
   .level-card.skipped {
-    border-color: var(--border-soft);
-    background: var(--surface);
+    border-color: rgba(255,255,255,0.15);
+    opacity: 0.8;
   }
-  .level-card.skipped .level-preview { opacity: 0.4; }
+  .level-card.skipped .level-preview { opacity: 0.5; }
 
   /* ── Number area ── */
   .level-preview {
@@ -162,64 +221,68 @@
     justify-content: center;
     overflow: hidden;
     position: relative;
+    background: var(--inset-bg);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
   }
 
   .level-icon {
-    font-size: clamp(20px, 5vw, 40px);
-    font-weight: 900;
-    font-family: var(--mono);
-    color: var(--text);
+    font-family: var(--game-font);
+    font-size: clamp(18px, 5vw, 36px);
+    font-weight: 400;
+    color: var(--text-light);
     user-select: none;
     line-height: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
   }
 
   /* ── Label bar ── */
   .level-info {
-    border-top: 1px solid var(--border-soft);
-    padding: 5px 6px;
-    background: var(--bg);
+    border-top: 1px solid rgba(0,0,0,0.4);
+    padding: 4px 5px;
+    background: rgba(0,0,0,0.25);
     display: flex;
     flex-direction: column;
     gap: 1px;
   }
   .level-number {
-    font-family: var(--mono);
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--text);
+    font-family: var(--body-font);
+    font-size: 8px;
+    font-weight: 800;
+    color: var(--gold-mid);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
   }
   .level-status {
-    font-size: 8px;
-    color: var(--text);
-    font-weight: 700;
+    font-size: 7px;
+    color: var(--gold);
+    font-weight: 800;
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
   }
   .status-icon { display: flex; align-items: center; }
 
   /* ── Lock ── */
   .locked {
-    opacity: 0.25;
+    opacity: 0.35;
     cursor: not-allowed;
     pointer-events: none;
   }
   .locked-overlay {
     position: absolute;
     inset: 0;
-    background: var(--bg);
+    background: rgba(0,0,0,0.6);
     z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.7;
   }
-  .locked-icon { display: flex; align-items: center; }
+  .locked-icon { display: flex; align-items: center; color: var(--gold-mid); }
 
   /* ── PLAY / RESUME badge ── */
   .unlock-next {
@@ -227,24 +290,26 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--text);
-    color: var(--bg);
-    padding: 5px 6px;
-    font-size: 9px;
-    font-weight: 800;
+    background: linear-gradient(to bottom, var(--gold-light), var(--gold-mid));
+    color: var(--text-dark);
+    padding: 4px 5px;
+    font-family: var(--game-font);
+    font-size: 10px;
+    font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
     z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     line-height: 1;
+    box-shadow: 0 -1px 0 rgba(255,255,255,0.2);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
   }
   .unlock-next.resume {
-    background: var(--surface-2);
-    color: var(--text);
-    border-top: 1px solid var(--border);
+    background: linear-gradient(to bottom, var(--silver), var(--silver-mid));
+    color: #333;
   }
 
   /* ── Unlock notification ── */
@@ -252,58 +317,74 @@
     position: fixed;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    background: var(--text);
-    border: 1px solid var(--bg);
-    padding: 32px 48px;
+    background-color: var(--wood);
+    background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.08), rgba(0,0,0,0.08) 8px, transparent 8px, transparent 16px);
+    border: 3px solid var(--gold);
+    border-radius: 12px;
+    padding: 32px 44px;
     z-index: 10000;
     text-align: center;
     opacity: 0;
     pointer-events: none;
+    box-shadow: 0 0 0 8px var(--wood-dark), 0 20px 50px rgba(0,0,0,0.7), 0 0 30px rgba(255,215,0,0.2);
   }
   .unlock-notification.show { animation: unlockPop 3s ease-out forwards; }
   @keyframes unlockPop {
-    0%   { opacity: 0; transform: translate(-50%, -48%); }
-    10%  { opacity: 1; transform: translate(-50%, -50%); }
-    85%  { opacity: 1; transform: translate(-50%, -50%); }
-    100% { opacity: 0; transform: translate(-50%, -52%); }
+    0%   { opacity: 0; transform: translate(-50%, -48%) scale(0.9); }
+    10%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    85%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -52%) scale(0.95); }
   }
-  .unlock-icon { margin-bottom: 14px; color: var(--bg); }
+  .unlock-icon { margin-bottom: 14px; color: var(--gold); }
   .unlock-text {
-    font-size: 20px; font-weight: 900; color: var(--bg);
-    letter-spacing: 0.04em; text-transform: uppercase;
+    font-family: var(--game-font);
+    font-size: 24px;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0 var(--gold-shadow);
   }
   .unlock-subtext {
-    font-size: 11px; color: var(--bg); font-family: var(--mono);
-    text-transform: uppercase; letter-spacing: 0.12em;
-    opacity: 0.6; margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--body-font);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    opacity: 0.8;
+    margin-top: 8px;
   }
 
   .loading {
-    text-align: center; padding: 60px 20px;
-    font-family: var(--mono); color: var(--text-dim);
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em;
+    text-align: center;
+    padding: 60px 20px;
+    font-family: var(--game-font);
+    color: var(--gold-mid);
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-shadow: 2px 2px 0 var(--gold-shadow);
   }
 
   /* ── Responsive ── */
   @media (max-width: 768px) {
-    .levels-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    h1 { font-size: 20px; }
+    .levels-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    h1 { font-size: 22px; }
   }
   @media (max-width: 480px) {
-    .levels-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
-    .container { padding: 0 8px 80px; }
-    .header { padding: 10px 12px 0; }
-    .progress-label { padding: 5px 12px 10px; }
-    h1 { font-size: 18px; }
+    .levels-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .container { padding: 12px 8px 80px; }
+    .header { padding: 8px 10px 0; }
+    .progress-label { padding: 4px 0 8px; }
+    h1 { font-size: 20px; }
   }
-
 </style>
 </head>
 <body>
   <div class="header">
     <div class="header-top">
       <button class="back-button" onclick="location.href='index.html'">
-        <i data-lucide="arrow-left" style="width: 12px; height: 12px;"></i> Back
+        <i data-lucide="arrow-left" style="width: 13px; height: 13px;"></i> Back
       </button>
       <div class="header-title-block">
         <h1>Levels</h1>
@@ -416,7 +497,7 @@
     const imagesData = await getImages();
     
     if (!imagesData.levels || imagesData.levels.length === 0) {
-      levelsContainer.innerHTML = '<p>No levels found. Please add images to the "images" folder.</p>';
+      levelsContainer.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:40px">No levels found. Please add images to the "images" folder.</p>';
       return;
     }
 
@@ -459,26 +540,26 @@
       }
 
       card.innerHTML = `
-        ${isNext && !hasProgress ? '<div class="unlock-next"><i data-lucide="play" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"></i> PLAY</div>' : ''}
-        ${hasProgress && !isCompleted ? '<div class="unlock-next resume"><i data-lucide="pause" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"></i> RESUME</div>' : ''}
-        ${isLocked ? '<div class="locked-overlay"><div class="locked-icon"><i data-lucide="lock" style="width: 24px; height: 24px;"></i></div></div>' : ''}
+        ${isNext && !hasProgress ? '<div class="unlock-next"><i data-lucide="play" style="width: 9px; height: 9px; display: inline-block; vertical-align: middle;"></i> PLAY</div>' : ''}
+        ${hasProgress && !isCompleted ? '<div class="unlock-next resume"><i data-lucide="pause" style="width: 9px; height: 9px; display: inline-block; vertical-align: middle;"></i> RESUME</div>' : ''}
+        ${isLocked ? '<div class="locked-overlay"><div class="locked-icon"><i data-lucide="lock" style="width: 22px; height: 22px;"></i></div></div>' : ''}
         <div class="level-preview">
           <div class="level-icon">
-            ${isSkipped ? '<i data-lucide="skip-forward" style="width: 24px; height: 24px; opacity: 0.4;"></i>' :
-              isCompleted ? '<i data-lucide="check" style="width: 28px; height: 28px;"></i>' : levelNum}
+            ${isSkipped ? '<i data-lucide="skip-forward" style="width: 22px; height: 22px; opacity: 0.5;"></i>' :
+              isCompleted ? '<i data-lucide="check" style="width: 26px; height: 26px; color: var(--gold);"></i>' : levelNum}
           </div>
         </div>
         <div class="level-info">
-          <div class="level-number">Level ${levelNum}</div>
+          <div class="level-number">Lvl ${levelNum}</div>
           ${isCompleted && !isSkipped ? 
             `<div class="level-status">
-              <span class="status-icon"><i data-lucide="check" style="width: 12px; height: 12px;"></i></span> COMPLETE
+              <span class="status-icon"><i data-lucide="check" style="width: 10px; height: 10px;"></i></span> DONE
             </div>` : 
             ''
           }
           ${isSkipped ? 
-            `<div class="level-status" style="color: var(--text-dim);">
-              <span class="status-icon"><i data-lucide="skip-forward" style="width: 12px; height: 12px;"></i></span> SKIPPED
+            `<div class="level-status" style="color: var(--text-faint);">
+              <span class="status-icon"><i data-lucide="skip-forward" style="width: 10px; height: 10px;"></i></span> SKIP
             </div>` : 
             ''
           }

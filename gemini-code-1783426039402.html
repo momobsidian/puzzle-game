@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic 3D Jigsaw Puzzle</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            /* Classic felt green table background */
+            background-color: #2a5035;
+            background-image: radial-gradient(circle at center, #366143 0%, #172e1d 100%);
+            color: #fff;
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            /* Wood texture base */
+            background-color: #5c3a21;
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(0,0,0,0.1),
+                rgba(0,0,0,0.1) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 
+                inset 0 0 15px rgba(0,0,0,0.8),
+                0 15px 30px rgba(0,0,0,0.6),
+                0 0 0 8px #3b2210; 
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        .sidebar {
+            flex: 1 1 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 10px;
+        }
+
+        h1 {
+            font-size: 28px;
+            text-shadow: 2px 2px 4px #000;
+            margin: 0 0 5px 0;
+            text-align: center;
+            color: #ffd700;
+            letter-spacing: 1px;
+        }
+
+        p {
+            font-size: 14px;
+            text-align: center;
+            color: #eee;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* 3D Classic Button Design */
+        .btn-3d {
+            background: linear-gradient(to bottom, #f7dfa5, #e0b753);
+            border: none;
+            border-radius: 8px;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #4a2e1a;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.6);
+            cursor: pointer;
+            box-shadow: 
+                0 6px 0 #9c7722,
+                0 10px 15px rgba(0,0,0,0.5);
+            transition: transform 0.1s, box-shadow 0.1s;
+            user-select: none;
+        }
+
+        .btn-3d:active {
+            transform: translateY(6px);
+            box-shadow: 
+                0 0 0 #9c7722,
+                0 4px 4px rgba(0,0,0,0.5);
+        }
+
+        .btn-solve {
+            background: linear-gradient(to bottom, #e0e0e0, #a3a3a3);
+            color: #333;
+            box-shadow: 
+                0 6px 0 #7a7a7a,
+                0 10px 15px rgba(0,0,0,0.5);
+        }
+
+        .btn-solve:active {
+            box-shadow: 
+                0 0 0 #7a7a7a,
+                0 4px 4px rgba(0,0,0,0.5);
+        }
+
+        .board-container {
+            flex: 3 1 600px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            border: 3px inset #8b5a33;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            cursor: grab;
+            display: block;
+            max-width: 100%;
+            height: auto;
+            touch-action: none; /* Prevent mobile scrolling while dragging */
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <div class="sidebar">
+            <h1>Jigsaw 3D</h1>
+            <p>Drag and drop the pieces to reveal the beautiful landscape.</p>
+            <button id="shuffleBtn" class="btn-3d">Shuffle Pieces</button>
+            <button id="solveBtn" class="btn-3d btn-solve">Solve Preview</button>
+        </div>
+        <div class="board-container">
+            <canvas id="jigsawCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        class JigsawPuzzle {
+            constructor(canvasId, imageSrc) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                
+                // Set grid difficulty
+                this.cols = 6;
+                this.rows = 4;
+                
+                this.pieces = [];
+                this.isSolved = true;
+                this.selectedPiece = null;
+                this.offsetX = 0;
+                this.offsetY = 0;
+
+                // Load CDN Image
+                this.img = new Image();
+                this.img.crossOrigin = "Anonymous";
+                this.img.src = imageSrc;
+                
+                this.img.onload = () => {
+                    // Set internal logic resolution
+                    const maxRes = 900;
+                    const scale = Math.min(1, maxRes / this.img.width);
+                    this.canvas.width = this.img.width * scale;
+                    this.canvas.height = this.img.height * scale;
+                    
+                    this.pw = this.canvas.width / this.cols;
+                    this.ph = this.canvas.height / this.rows;
+                    
+                    this.initPieces();
+                    this.draw();
+                };
+
+                // Mouse Events
+                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+                window.addEventListener('mousemove', this.onMouseMove.bind(this));
+                window.addEventListener('mouseup', this.onMouseUp.bind(this));
+
+                // Touch Events for Mobile
+                this.canvas.addEventListener('touchstart', this.handleTouch.bind(this), { passive: false });
+                window.addEventListener('touchmove', this.handleTouch.bind(this), { passive: false });
+                window.addEventListener('touchend', this.handleTouch.bind(this));
+            }
+
+            initPieces() {
+                this.pieces = [];
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        // Generate mathematically perfect interlocking tabs
+                        // 1 = tab outward, -1 = blank inward, 0 = flat edge
+                        let top = (r === 0) ? 0 : -this.pieces[(r - 1) * this.cols + c].tabs.bottom;
+                        let left = (c === 0) ? 0 : -this.pieces[r * this.cols + (c - 1)].tabs.right;
+                        let right = (c === this.cols - 1) ? 0 : (Math.random() > 0.5 ? 1 : -1);
+                        let bottom = (r === this.rows - 1) ? 0 : (Math.random() > 0.5 ? 1 : -1);
+                        
+                        this.pieces.push({
+                            id: `${r}-${c}`,
+                            correctX: c * this.pw,
+                            correctY: r * this.ph,
+                            currentX: c * this.pw,
+                            currentY: r * this.ph,
+                            w: this.pw,
+                            h: this.ph,
+                            tabs: { top, right, bottom, left },
+                            isSnapped: true
+                        });
+                    }
+                }
+            }
+
+            shuffle() {
+                this.isSolved = false;
+                this.pieces.forEach(p => {
+                    // Scatter pieces randomly across the board
+                    p.currentX = Math.random() * (this.canvas.width - p.w);
+                    p.currentY = Math.random() * (this.canvas.height - p.h);
+                    p.isSnapped = false;
+                });
+                // Randomize z-index order
+                this.pieces.sort(() => Math.random() - 0.5);
+                this.draw();
+            }
+
+            solve() {
+                this.pieces.forEach(p => {
+                    p.currentX = p.correctX;
+                    p.currentY = p.correctY;
+                    p.isSnapped = true;
+                });
+                this.isSolved = true;
+                this.draw();
+            }
+
+            // Real-life Jigsaw Curve Generator
+            drawEdge(x1, y1, x2, y2, tab) {
+                let ctx = this.ctx;
+                if (tab === 0) {
+                    ctx.lineTo(x2, y2);
+                    return;
+                }
+
+                const L = Math.hypot(x2 - x1, y2 - y1);
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const sign = (tab === 1) ? -1 : 1; 
+                
+                ctx.save();
+                ctx.translate(x1, y1);
+                ctx.rotate(angle);
+                
+                // Classic nub bezier math
+                ctx.lineTo(L * 0.35, 0);
+                
+                // Left Neck
+                ctx.bezierCurveTo(
+                    L * 0.35, L * 0.05 * sign, 
+                    L * 0.42, L * 0.15 * sign, 
+                    L * 0.35, L * 0.20 * sign  
+                );
+                // Top Round Head
+                ctx.bezierCurveTo(
+                    L * 0.25, L * 0.28 * sign, 
+                    L * 0.75, L * 0.28 * sign, 
+                    L * 0.65, L * 0.20 * sign  
+                );
+                // Right Neck
+                ctx.bezierCurveTo(
+                    L * 0.58, L * 0.15 * sign, 
+                    L * 0.65, L * 0.05 * sign, 
+                    L * 0.65, 0                
+                );
+                
+                ctx.lineTo(L, 0);
+                ctx.restore();
+            }
+
+            drawPiecePath(piece) {
+                let x = piece.currentX;
+                let y = piece.currentY;
+                let w = piece.w;
+                let h = piece.h;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, y);
+                // Draw all four sides clockwise
+                this.drawEdge(x, y, x + w, y, piece.tabs.top);
+                this.drawEdge(x + w, y, x + w, y + h, piece.tabs.right);
+                this.drawEdge(x + w, y + h, x, y + h, piece.tabs.bottom);
+                this.drawEdge(x, y + h, x, y, piece.tabs.left);
+                this.ctx.closePath();
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Faint ghost image to guide the player
+                this.ctx.globalAlpha = 0.2;
+                this.ctx.drawImage(this.img, 0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.globalAlpha = 1.0;
+                
+                // Sort array to draw snapped pieces first, loose on top
+                const snapped = this.pieces.filter(p => p.isSnapped);
+                const loose = this.pieces.filter(p => !p.isSnapped);
+                
+                snapped.forEach(p => this.drawPiece(p));
+                loose.forEach(p => this.drawPiece(p));
+            }
+
+            drawPiece(piece) {
+                const ctx = this.ctx;
+                const isDragging = (piece === this.selectedPiece);
+                
+                ctx.save();
+                this.drawPiecePath(piece);
+                
+                // Create external drop shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                ctx.shadowBlur = isDragging ? 20 : 6;
+                ctx.shadowOffsetX = isDragging ? 10 : 3;
+                ctx.shadowOffsetY = isDragging ? 10 : 3;
+                
+                // Fill path to cast shadow, then clear shadow before clip
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                ctx.shadowColor = 'transparent';
+                
+                // Clip image precisely to the puzzle nub path
+                ctx.clip();
+                
+                // Draw offset image mapping back to correct coordinate mapping
+                ctx.drawImage(
+                    this.img, 
+                    piece.currentX - piece.correctX, 
+                    piece.currentY - piece.correctY, 
+                    this.canvas.width, 
+                    this.canvas.height
+                );
+                
+                // Create 3D Bevel Edge Effect
+                let grad = ctx.createLinearGradient(
+                    piece.currentX, piece.currentY, 
+                    piece.currentX + piece.w, piece.currentY + piece.h
+                );
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.7)'); // Highlight top left
+                grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.1)');
+                grad.addColorStop(0.6, 'rgba(0, 0, 0, 0.1)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0.8)');       // Shadow bottom right
+                
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+
+            // Correct for CSS scaling
+            getMousePos(clientX, clientY) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+
+            getPieceAt(x, y) {
+                // Loop backwards to click on the highest z-index piece
+                for (let i = this.pieces.length - 1; i >= 0; i--) {
+                    let p = this.pieces[i];
+                    if (p.isSnapped) continue;
+                    
+                    this.drawPiecePath(p);
+                    if (this.ctx.isPointInPath(x, y)) {
+                        return p;
+                    }
+                }
+                return null;
+            }
+
+            handleDown(x, y) {
+                let piece = this.getPieceAt(x, y);
+                if (piece) {
+                    this.selectedPiece = piece;
+                    this.offsetX = x - piece.currentX;
+                    this.offsetY = y - piece.currentY;
+                    
+                    // Bring piece to front of rendering array
+                    this.pieces = this.pieces.filter(p => p !== piece);
+                    this.pieces.push(piece);
+                    this.draw();
+                }
+            }
+            
+            handleMove(x, y) {
+                if (!this.selectedPiece) return;
+                this.selectedPiece.currentX = x - this.offsetX;
+                this.selectedPiece.currentY = y - this.offsetY;
+                this.draw();
+            }
+            
+            handleUp() {
+                if (!this.selectedPiece) return;
+                
+                let p = this.selectedPiece;
+                let dx = Math.abs(p.currentX - p.correctX);
+                let dy = Math.abs(p.currentY - p.correctY);
+                
+                // Snap proximity threshold
+                if (dx < 25 && dy < 25) {
+                    p.currentX = p.correctX;
+                    p.currentY = p.correctY;
+                    p.isSnapped = true;
+                    
+                    // Small click visual refresh
+                    this.draw();
+                    this.checkWin();
+                }
+                
+                this.selectedPiece = null;
+                this.draw();
+            }
+
+            onMouseDown(e) {
+                const pos = this.getMousePos(e.clientX, e.clientY);
+                this.handleDown(pos.x, pos.y);
+            }
+            
+            onMouseMove(e) {
+                const pos = this.getMousePos(e.clientX, e.clientY);
+                this.handleMove(pos.x, pos.y);
+            }
+            
+            onMouseUp(e) {
+                this.handleUp();
+            }
+
+            handleTouch(e) {
+                if (e.target === this.canvas) e.preventDefault(); // Stop mobile scroll
+                let touch = e.touches[0] || e.changedTouches[0];
+                if (!touch) return;
+                
+                const pos = this.getMousePos(touch.clientX, touch.clientY);
+                
+                if (e.type === 'touchstart') this.handleDown(pos.x, pos.y);
+                if (e.type === 'touchmove') this.handleMove(pos.x, pos.y);
+                if (e.type === 'touchend') this.handleUp();
+            }
+
+            checkWin() {
+                if (this.pieces.every(p => p.isSnapped) && !this.isSolved) {
+                    this.isSolved = true;
+                    setTimeout(() => {
+                        alert("🎉 Incredible job! You solved the puzzle!");
+                    }, 200);
+                }
+            }
+        }
+
+        // Initialize the game using a high-quality, beautiful CDN image
+        const imgUrl = 'https://picsum.photos/seed/jigsawnature/800/600';
+        const game = new JigsawPuzzle('jigsawCanvas', imgUrl);
+
+        document.getElementById('shuffleBtn').addEventListener('click', () => game.shuffle());
+        document.getElementById('solveBtn').addEventListener('click', () => game.solve());
+
+    </script>
+</body>
+</html>

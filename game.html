@@ -4,30 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#172e1d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Image Puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #000000;
-    --surface: #0a0a0a;
-    --surface-2: #111111;
-    --border: #333333;
-    --border-soft: #1a1a1a;
+    --bg: #172e1d;
+    --surface: #3b2210;
+    --surface-2: #2a1a0a;
+    --border: #9c7722;
+    --border-soft: #5c3a21;
     --text: #ffffff;
-    --text-dim: #888888;
-    --text-faint: #555555;
+    --text-dim: #d4c5a9;
+    --text-faint: #8a7560;
+    --gold: #ffd700;
+    --gold-light: #f7dfa5;
+    --gold-mid: #e0b753;
+    --gold-shadow: #9c7722;
+    --silver: #e0e0e0;
+    --silver-mid: #a3a3a3;
+    --silver-shadow: #7a7a7a;
+    --wood: #5c3a21;
+    --wood-dark: #3b2210;
+    --felt: #2a5035;
+    --felt-dark: #172e1d;
+    --text-dark: #4a2e1a;
     --mono: ui-monospace,"SF Mono","JetBrains Mono","Consolas",monospace;
-    --sans: "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --sans: 'Fredoka One','Trebuchet MS',cursive;
+    --body: 'Nunito','Trebuchet MS',Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{min-height:100%;min-height:100dvh;background:var(--bg)}
   body{
-    background:var(--bg);color:var(--text);
+    background-color:var(--felt);
+    background-image:radial-gradient(circle at center,#366143 0%,var(--felt-dark) 100%);
+    color:var(--text);
     min-height:100%;min-height:100dvh;
-    font-family:var(--sans);
+    font-family:var(--body);
     -webkit-font-smoothing:antialiased;
     width:100%;
   }
@@ -46,52 +63,65 @@
     align-items:center;
     gap:12px;
     padding:10px 14px;
-    border-bottom:1px solid var(--border-soft);
+    background-color:var(--wood-dark);
+    background-image:repeating-linear-gradient(45deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1) 8px,transparent 8px,transparent 16px);
+    border-bottom:3px solid var(--gold-shadow);
     flex-shrink:0;
+    box-shadow:0 4px 12px rgba(0,0,0,0.5);
   }
   .exit-button{
     flex-shrink:0;
-    background:transparent;
-    border:1px solid var(--border);
-    color:var(--text);
+    background:linear-gradient(to bottom,var(--silver),var(--silver-mid));
+    border:none;
+    border-radius:8px;
+    color:#333;
     width:40px;height:40px;
     cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    transition:background 0.1s,color 0.1s;
+    box-shadow:0 4px 0 var(--silver-shadow),0 6px 10px rgba(0,0,0,0.4);
+    transition:transform 0.1s,box-shadow 0.1s;
+    user-select:none;
   }
   .exit-button svg{width:18px;height:18px;stroke:currentColor;fill:none}
-  .exit-button:hover{background:var(--text);color:var(--bg)}
-  .exit-button:active{opacity:.7}
+  .exit-button:hover{background:linear-gradient(to bottom,#eee,#bbb)}
+  .exit-button:active{transform:translateY(4px);box-shadow:0 0 0 var(--silver-shadow),0 2px 4px rgba(0,0,0,0.3)}
   
   .skip-button{
     flex-shrink:0;
-    background:transparent;
-    border:1px solid var(--border);
-    color:var(--text-dim);
+    background:linear-gradient(to bottom,#c9a84c,#8b6914);
+    border:none;
+    border-radius:8px;
+    color:#fff;
     padding:0 12px;height:40px;
     cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:6px;
-    transition:background 0.1s,color 0.1s,border-color 0.1s;
-    font-family:var(--mono);
-    font-size:10px;
+    font-family:var(--body);
+    font-size:11px;
+    font-weight:700;
     text-transform:uppercase;
     letter-spacing:0.05em;
+    box-shadow:0 4px 0 #5a4208,0 6px 10px rgba(0,0,0,0.4);
+    transition:transform 0.1s,box-shadow 0.1s;
+    user-select:none;
+    text-shadow:0 1px 2px rgba(0,0,0,0.5);
   }
-  .skip-button:hover{background:var(--surface-2);border-color:var(--border);color:var(--text)}
-  .skip-button:active{opacity:.7}
+  .skip-button:hover{background:linear-gradient(to bottom,#d4b054,#9c7722)}
+  .skip-button:active{transform:translateY(4px);box-shadow:0 0 0 #5a4208,0 2px 4px rgba(0,0,0,0.3)}
   
   .level-label{flex:1;min-width:0}
   .eyebrow{
-    font-family:var(--mono);font-size:9px;
-    letter-spacing:.25em;text-transform:uppercase;
-    color:var(--text-dim);font-weight:600;
+    font-family:var(--body);font-size:9px;
+    letter-spacing:.2em;text-transform:uppercase;
+    color:var(--gold-mid);font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    text-shadow:0 1px 3px rgba(0,0,0,0.6);
   }
   h1{
-    font-size:16px;font-weight:600;
-    letter-spacing:-.01em;color:var(--text);
+    font-family:var(--sans);font-size:18px;font-weight:400;
+    letter-spacing:.03em;color:var(--gold);
     line-height:1;text-transform:uppercase;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    text-shadow:2px 2px 0 var(--gold-shadow),0 3px 8px rgba(0,0,0,0.6);
   }
   .subtitle{display:none}
   
@@ -131,26 +161,30 @@
     align-items: flex-start;
     gap: 2px;
     padding: 8px 12px;
-    border: 1px solid var(--border-soft);
-    background: var(--surface);
+    border: 1px solid rgba(0,0,0,0.5);
+    border-radius:6px;
+    background:rgba(0,0,0,0.35);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),0 1px 0 rgba(255,255,255,0.06);
   }
   .stat-timer {
     width: 100%;
   }
   .stat-label {
-    font-family: var(--mono);
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--text-dim);
+    font-family: var(--body);
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--gold-mid);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.15em;
+    text-shadow:0 1px 2px rgba(0,0,0,0.7);
   }
   .stat-value {
-    font-family: var(--mono);
-    font-size: 16px;
-    font-weight: 600;
+    font-family: var(--sans);
+    font-size: 18px;
+    font-weight: 400;
     color: var(--text);
     line-height: 1;
+    text-shadow:1px 1px 3px rgba(0,0,0,0.5);
   }
 
   /* hide legacy stat elements (kept for JS compat) */
@@ -168,14 +202,31 @@
   /* ── Board ── */
   .board-wrap{
     position:relative;flex-shrink:0;
-    /* square that fits the remaining vertical space */
     width:min(calc(100dvh - 180px),calc(100vw - 28px));
     aspect-ratio:1/1;
+    border:1px solid rgba(0,0,0,0.5);
+    background:rgba(0,0,0,0.35);
+    padding:3px;
+  }
+  .board-wrap::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    box-shadow:
+      inset 0 3px 8px rgba(0,0,0,0.7),
+      inset 3px 0 6px rgba(0,0,0,0.4),
+      inset -3px 0 6px rgba(0,0,0,0.4),
+      inset 0 -2px 5px rgba(0,0,0,0.35);
+    pointer-events:none;
+    z-index:10;
   }
   .board{
     display:grid;width:100%;height:100%;
-    border:1px solid var(--border);
-    overflow:hidden;background:var(--surface-2);
+    border:none;
+    border-radius:0;
+    overflow:hidden;
+    background:transparent;
+    box-shadow:none;
   }
   .tile{
     background-repeat:no-repeat;border:none;
@@ -216,39 +267,50 @@
 
   /* ── Win banner ── */
   .status{
-    font-family:var(--mono);font-size:12px;
-    color:var(--text);text-align:center;
+    font-family:var(--body);font-size:13px;font-weight:700;
+    color:var(--gold);text-align:center;
     opacity:0;transition:opacity .15s ease;
     display:flex;align-items:center;justify-content:center;
     gap:8px;flex-wrap:wrap;
     padding:12px 14px;
-    background:var(--surface);
-    border:1px solid var(--border);
+    background-color:var(--wood);
+    background-image:repeating-linear-gradient(45deg,rgba(0,0,0,0.08),rgba(0,0,0,0.08) 6px,transparent 6px,transparent 12px);
+    border:2px solid var(--gold-shadow);
+    border-radius:8px;
+    box-shadow:0 4px 0 var(--wood-dark),0 8px 16px rgba(0,0,0,0.4);
     width:100%;
+    text-shadow:1px 1px 0 var(--gold-shadow);
   }
   .status.status-show{opacity:1}
 
   /* ── Buttons ── */
   .btn{
-    background:var(--text);color:var(--bg);
-    border:1px solid var(--text);
-    padding:8px 16px;font-size:11px;font-weight:600;
-    cursor:pointer;font-family:var(--mono);
-    text-transform:uppercase;letter-spacing:.08em;
-    transition:background .1s,color .1s;white-space:nowrap;
-    border-radius: 0;
+    background:linear-gradient(to bottom,var(--gold-light),var(--gold-mid));
+    color:var(--text-dark);
+    border:none;
+    border-radius:8px;
+    padding:10px 20px;font-family:var(--sans);font-size:14px;font-weight:400;
+    cursor:pointer;
+    text-transform:uppercase;letter-spacing:.06em;
+    box-shadow:0 5px 0 var(--gold-shadow),0 8px 14px rgba(0,0,0,0.4);
+    transition:transform .1s,box-shadow .1s;white-space:nowrap;
+    text-shadow:1px 1px 0 rgba(255,255,255,0.5);
+    user-select:none;
   }
-  .btn:hover{background:var(--bg);color:var(--text)}
-  .btn:active{opacity:.7}
+  .btn:hover{background:linear-gradient(to bottom,#ffe5b4,#e8c060)}
+  .btn:active{transform:translateY(5px);box-shadow:0 0 0 var(--gold-shadow),0 3px 6px rgba(0,0,0,0.3)}
   :focus-visible{outline:2px solid var(--text);outline-offset:2px}
 
   /* ── Footer ── */
   footer{
-    font-family:var(--mono);font-size:8px;
-    color:var(--text-faint);text-align:center;
+    font-family:var(--body);font-size:9px;font-weight:700;
+    color:var(--gold-mid);text-align:center;
     letter-spacing:.1em;text-transform:uppercase;
-    padding:5px 14px;border-top:1px solid var(--border-soft);
+    padding:6px 14px;
+    background:var(--wood-dark);
+    border-top:2px solid var(--gold-shadow);
     flex-shrink:0;
+    text-shadow:0 1px 2px rgba(0,0,0,0.6);
   }
 
   /* ── Solved ── */
@@ -276,8 +338,10 @@
     pointer-events: all;
   }
   .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background-color: var(--wood);
+    background-image:repeating-linear-gradient(45deg,rgba(0,0,0,0.08),rgba(0,0,0,0.08) 8px,transparent 8px,transparent 16px);
+    border: 3px solid var(--gold-shadow);
+    border-radius: 12px;
     padding: 28px 24px 20px;
     width: min(320px, calc(100vw - 40px));
     display: flex;
@@ -285,6 +349,7 @@
     gap: 12px;
     transform: translateY(8px);
     transition: transform 0.15s ease;
+    box-shadow: 0 0 0 6px var(--wood-dark), 0 20px 40px rgba(0,0,0,0.6);
   }
   .modal-backdrop.open .modal {
     transform: translateY(0);
@@ -299,19 +364,21 @@
     color: var(--text-dim);
   }
   .modal-title {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    color: var(--text);
+    font-family: var(--sans);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    color: var(--gold);
+    text-shadow: 2px 2px 0 var(--gold-shadow);
   }
   .modal-body {
-    font-family: var(--mono);
-    font-size: 10px;
+    font-family: var(--body);
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-dim);
     line-height: 1.6;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-top: 1px solid var(--border-soft);
+    letter-spacing: 0.02em;
+    border-top: 1px solid rgba(0,0,0,0.4);
     padding-top: 12px;
   }
   .modal-actions {
@@ -322,33 +389,38 @@
   .modal-btn {
     flex: 1;
     padding: 10px 12px;
-    font-family: var(--mono);
-    font-size: 10px;
+    font-family: var(--body);
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     cursor: pointer;
-    border: 1px solid var(--border);
-    transition: background 0.1s, color 0.1s;
+    border: none;
+    border-radius: 8px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none;
   }
   .modal-btn-cancel {
-    background: transparent;
-    color: var(--text-dim);
+    background: linear-gradient(to bottom, var(--silver), var(--silver-mid));
+    color: #333;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+    box-shadow: 0 4px 0 var(--silver-shadow), 0 6px 10px rgba(0,0,0,0.3);
   }
-  .modal-btn-cancel:hover {
-    background: var(--surface-2);
-    color: var(--text);
+  .modal-btn-cancel:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--silver-shadow), 0 2px 4px rgba(0,0,0,0.2);
   }
   .modal-btn-confirm {
-    background: var(--text);
-    color: var(--bg);
-    border-color: var(--text);
+    background: linear-gradient(to bottom, var(--gold-light), var(--gold-mid));
+    color: var(--text-dark);
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+    box-shadow: 0 4px 0 var(--gold-shadow), 0 6px 10px rgba(0,0,0,0.3);
   }
-  .modal-btn-confirm:hover {
-    background: var(--bg);
-    color: var(--text);
+  .modal-btn-confirm:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--gold-shadow), 0 2px 4px rgba(0,0,0,0.2);
   }
-  .modal-btn:active { opacity: 0.7; }
+  .modal-btn:active { opacity: 0.9; }
   @keyframes firework-particle{
     0%{transform:translate(0,0);opacity:1}
     100%{transform:translate(var(--dx),var(--dy));opacity:0}
@@ -385,7 +457,6 @@
   @media(prefers-reduced-motion:reduce){
     *{transition:none!important;animation:none!important}
   }
-</style>
 </style>
 </head>
 <body>
@@ -835,12 +906,26 @@
 
   function shuffleTiles() {
     const total = N * N;
-    // Default puzzle block position, not randomly shuffled
-    // Shift all pieces by 1 position deterministically
-    let order = Array.from({ length: total }, (_, i) => (i + 1) % total);
-    
+    // Build order array [0, 1, 2, ... total-1]
+    let order = Array.from({ length: total }, (_, i) => i);
+
+    // Fisher-Yates shuffle
+    for (let i = total - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+
+    // Fix any tile that ended up in its correct position
+    // by swapping it with a neighbour
+    for (let i = 0; i < total; i++) {
+      if (order[i] === i) {
+        const swapWith = (i + 1) % total;
+        [order[i], order[swapWith]] = [order[swapWith], order[i]];
+      }
+    }
+
     tiles.forEach((tile, i) => applyPiece(tile, order[i]));
-    
+
     // Store initial shuffled state
     initialShuffledState = tiles.map(t => parseInt(t.dataset.piece, 10));
   }

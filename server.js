@@ -340,7 +340,7 @@ const server = http.createServer((req, res) => {
         broadcastToAdmins({
           type: 'gameUpdate',
           data: {
-            sessionId,
+            sessionId: ip,
             ...stats,
             lastUpdate: Date.now()
           }
