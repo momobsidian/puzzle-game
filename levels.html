@@ -302,7 +302,21 @@
 <body>
   <div class="header">
     <div class="header-top">
-      <button class="back-button" onclick="location.href='index.html'">
+      <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let globalSessionId = urlParams.get('session');
+        if (!globalSessionId) {
+          globalSessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+          urlParams.set('session', globalSessionId);
+          window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+        }
+        function navTo(url) {
+          const u = new URL(url, window.location.href);
+          u.searchParams.set('session', globalSessionId);
+          window.location.href = u.toString();
+        }
+      </script>
+      <button class="back-button" onclick="navTo('index.html')">
         <i data-lucide="arrow-left" style="width: 12px; height: 12px;"></i> Back
       </button>
       <div class="header-title-block">
@@ -455,7 +469,7 @@
         + (isLocked ? ' locked' : '');
       
       if (!isLocked) {
-        card.onclick = () => location.href = `game.html?level=${levelNum}`;
+        card.onclick = () => navTo(`game.html?level=${levelNum}`);
       }
 
       card.innerHTML = `

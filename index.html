@@ -187,7 +187,21 @@
     <p class="tagline">
       Drag tiles to swap. Solve the image. Unlock the next level.
     </p>
-    <button class="play-button" onclick="location.href='levels.html'">
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      let globalSessionId = urlParams.get('session');
+      if (!globalSessionId) {
+        globalSessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+        urlParams.set('session', globalSessionId);
+        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+      }
+      function navTo(url) {
+        const u = new URL(url, window.location.href);
+        u.searchParams.set('session', globalSessionId);
+        window.location.href = u.toString();
+      }
+    </script>
+    <button class="play-button" onclick="navTo('levels.html')">
       <i data-lucide="play"></i>
       Play Now
     </button>

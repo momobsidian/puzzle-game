@@ -52,13 +52,12 @@ function getClientIp(req) {
 }
 
 // Check if a device session is allowed (not blocked by another active device)
-function isSessionAllowed(req) {
-  const ip = getClientIp(req);
+function isSessionAllowed(sessionId) {
   const now = Date.now();
   const staleThreshold = 60000; // 1 minute
-  for (const session of activeSessions.values()) {
-    if (session.ip !== ip && (now - session.lastUpdate <= staleThreshold)) {
-      console.log(`\x1b[31mBLOCKED: Another session is active. Active IP: ${session.ip}, New Request IP: ${ip}\x1b[0m`);
+  for (const [id, session] of activeSessions.entries()) {
+    if (id !== sessionId && (now - session.lastUpdate <= staleThreshold)) {
+      console.log(`\x1b[31mBLOCKED: Another session is active. Active session=${id}, New Request session=${sessionId}\x1b[0m`);
       return false; // Another session is active
     }
   }
@@ -138,7 +137,7 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const { sessionId } = JSON.parse(body);
-        if (!isSessionAllowed(req)) {
+        if (!isSessionAllowed(sessionId || 'unknown')) {
           res.writeHead(403, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'multiple_devices' }));
           return;
@@ -146,7 +145,6 @@ const server = http.createServer((req, res) => {
         
         activeSessions.set(sessionId || 'unknown', {
           sessionId: sessionId || 'unknown',
-          ip: getClientIp(req),
           event: 'check_session',
           lastUpdate: Date.now()
         });
@@ -214,7 +212,7 @@ const server = http.createServer((req, res) => {
         const data = JSON.parse(body);
         const sessionId = data.sessionId || 'unknown';
         
-        if (!isSessionAllowed(req)) {
+        if (!isSessionAllowed(sessionId)) {
           res.writeHead(403, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'multiple_devices' }));
           return;
@@ -376,7 +374,7 @@ const server = http.createServer((req, res) => {
         const stats = JSON.parse(body);
         const sessionId = stats.sessionId || 'unknown';
         
-        if (!isSessionAllowed(req)) {
+        if (!isSessionAllowed(sessionId)) {
           res.writeHead(403, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'multiple_devices' }));
           return;
@@ -387,7 +385,6 @@ const server = http.createServer((req, res) => {
         // Update active sessions
         activeSessions.set(sessionId, {
           ...stats,
-          ip: getClientIp(req),
           lastUpdate: Date.now()
         });
         

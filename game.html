@@ -510,8 +510,20 @@
   let startTime = null;
   let timerInterval = null;
   let currentImageUrl = null;
-  let sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const urlParams = new URLSearchParams(window.location.search);
+  let sessionId = urlParams.get('session');
+  if (!sessionId) {
+    sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    urlParams.set('session', sessionId);
+    window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+  }
   let initialShuffledState = []; // Track the shuffled starting positions
+
+  function navTo(url) {
+    const u = new URL(url, window.location.href);
+    u.searchParams.set('session', sessionId);
+    window.location.href = u.toString();
+  }
 
   // ---------- server communication ----------
 
@@ -1238,7 +1250,7 @@
     }
     
     // Navigate to levels
-    location.href = 'levels.html';
+    navTo('levels.html');
   });
 
   // Skip modal
@@ -1306,7 +1318,7 @@
     const totalLevels = await getTotalLevels();
     if (nextLevel <= totalLevels) {
       clearGameState(); // Clear saved state when moving to next level
-      location.href = `game.html?level=${nextLevel}`;
+      navTo(`game.html?level=${nextLevel}`);
     }
   });
 
@@ -1319,9 +1331,9 @@
     const nextLevel = currentLevel + 1;
     
     if (solved && nextLevel <= totalLevels) {
-      location.href = `levels.html?unlocked=${nextLevel}`;
+      navTo(`levels.html?unlocked=${nextLevel}`);
     } else {
-      location.href = 'levels.html';
+      navTo('levels.html');
     }
   });
 
@@ -1378,7 +1390,7 @@
       backBtn.className = "btn";
       backBtn.type = "button";
       backBtn.textContent = "Back to Levels";
-      backBtn.addEventListener("click", () => location.href = 'levels.html');
+      backBtn.addEventListener("click", () => navTo('levels.html'));
       overlayEl.appendChild(backBtn);
       return;
     }
