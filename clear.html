@@ -428,14 +428,6 @@
         throw new Error('Failed to clear server progress');
       }
 
-      // Clear localStorage
-      try {
-        localStorage.removeItem('puzzleGameState');
-        localStorage.removeItem('shouldRedirectToLevels');
-      } catch (err) {
-        console.warn('Could not clear localStorage:', err);
-      }
-
       showMessage('All progress cleared successfully! The game has been reset.', 'success');
       
       // Reload progress display

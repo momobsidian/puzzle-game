@@ -885,66 +885,12 @@
     });
     
     // Save state to localStorage for page refresh recovery
-    saveGameState();
   }
 
-  // Save current game state to localStorage
-  function saveGameState() {
-    if (solved) return;
-    
-    const gameState = {
-      level: currentLevel,
-      moves: moves,
-      startTime: startTime,
-      elapsedTime: elapsedSeconds(),
-      tilePositions: tiles.map(t => parseInt(t.dataset.piece, 10)),
-      initialShuffledState: initialShuffledState,
-      timestamp: Date.now()
-    };
-    
-    try {
-      localStorage.setItem('puzzleGameState', JSON.stringify(gameState));
-    } catch (err) {
-      console.error('Error saving to localStorage:', err);
-    }
-  }
-
-  // Load game state from localStorage
-  function loadGameState() {
-    try {
-      const savedState = localStorage.getItem('puzzleGameState');
-      if (!savedState) return null;
-      
-      const state = JSON.parse(savedState);
-      
-      // Check level, recency, AND that tile count matches current grid size
-      const expectedTiles = N * N;
-      if (
-        state.level === currentLevel &&
-        (Date.now() - state.timestamp) < 3600000 &&
-        state.tilePositions &&
-        state.tilePositions.length === expectedTiles
-      ) {
-        return state;
-      }
-      
-      // Stale or mismatched state — clear it
-      localStorage.removeItem('puzzleGameState');
-      return null;
-    } catch (err) {
-      console.error('Error loading from localStorage:', err);
-      return null;
-    }
-  }
-
-  // Clear saved game state
-  function clearGameState() {
-    try {
-      localStorage.removeItem('puzzleGameState');
-    } catch (err) {
-      console.error('Error clearing localStorage:', err);
-    }
-  }
+  // No-op stubs — state is stored server-side only (progress.json)
+  function saveGameState() {}
+  function loadGameState() { return null; }
+  function clearGameState() {}
 
   function calculateProgress() {
     if (!tiles || tiles.length === 0 || initialShuffledState.length === 0) return 0;
@@ -1268,7 +1214,6 @@
     if (!solved && startTime && moves > 0) {
       const currentTime = elapsedSeconds();
       await saveProgress(false, currentTime, moves, true);
-      saveGameState();
     }
     
     // Navigate to levels
@@ -1375,7 +1320,6 @@
       // Save progress before leaving
       const currentTime = elapsedSeconds();
       saveProgress(false, currentTime, moves, true);
-      saveGameState(); // Also save to localStorage
       
       // Show warning dialog (browsers may or may not show this)
       const message = 'Game in progress. Progress will be saved.';
@@ -1405,8 +1349,22 @@
       return;
     }
     
-    // Check for saved game state
-    const savedState = loadGameState();
+    // Load server-side in-progress state
+    let savedState = null;
+    try {
+      const progressRes = await fetch('/api/progress');
+      const progressData = await progressRes.json();
+      const levelData = progressData.levels[currentLevel];
+      if (levelData && levelData.inProgress && !levelData.completed) {
+        const ip = levelData.inProgress;
+        // Only restore if tile count matches current grid
+        if (ip.tilePositions && ip.tilePositions.length === N * N) {
+          savedState = ip;
+        }
+      }
+    } catch (err) {
+      console.error('Error loading server progress:', err);
+    }
     
     const img = await getImageForLevel(currentLevel);
     const completed = await isLevelCompleted(currentLevel);
@@ -1414,37 +1372,6 @@
     
     // Hide next level button initially
     nextLevelBtn.style.display = 'none';
-    
-    // Show restore notification if game was restored
-    if (savedState) {
-      setTimeout(() => {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: var(--surface);
-          border: 2px solid var(--border);
-          color: var(--text);
-          padding: 12px 24px;
-          font-family: var(--mono);
-          font-size: 12px;
-          z-index: 1000;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          white-space: nowrap;
-        `;
-        notification.textContent = `Game restored: ${savedState.moves} moves, ${formatTime(savedState.elapsedTime)}`;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-          notification.style.transition = 'opacity 0.3s ease-out';
-          notification.style.opacity = '0';
-          setTimeout(() => notification.remove(), 300);
-        }, 3000);
-      }, 500);
-    }
   })();
 })();
 </script>
