@@ -51,18 +51,7 @@ function getClientIp(req) {
   return ip || 'unknown';
 }
 
-// Check if a device session is allowed (not blocked by another active device)
-function isSessionAllowed(sessionId) {
-  const now = Date.now();
-  const staleThreshold = 60000; // 1 minute
-  for (const [id, session] of activeSessions.entries()) {
-    if (id !== sessionId && (now - session.lastUpdate <= staleThreshold)) {
-      console.log(`\x1b[31mBLOCKED: Another session is active. Active session=${id}, New Request session=${sessionId}\x1b[0m`);
-      return false; // Another session is active
-    }
-  }
-  return true;
-}
+
 
 // Initialize progress file if it doesn't exist
 function initProgressFile() {
@@ -130,34 +119,7 @@ const server = http.createServer((req, res) => {
     // console.log(`${colors.dim}${req.method} ${req.url}${colors.reset}`);
   }
 
-  // Handle check session endpoint
-  if (req.url === '/api/check-session' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', () => {
-      try {
-        const { sessionId } = JSON.parse(body);
-        if (!isSessionAllowed(sessionId || 'unknown')) {
-          res.writeHead(403, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'multiple_devices' }));
-          return;
-        }
-        
-        activeSessions.set(sessionId || 'unknown', {
-          sessionId: sessionId || 'unknown',
-          event: 'check_session',
-          lastUpdate: Date.now()
-        });
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ allowed: true }));
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON' }));
-      }
-    });
-    return;
-  }
 
   // Handle levels endpoint
   if (req.url === '/api/levels' && req.method === 'GET') {
@@ -210,14 +172,6 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const data = JSON.parse(body);
-        const sessionId = data.sessionId || 'unknown';
-        
-        if (!isSessionAllowed(sessionId)) {
-          res.writeHead(403, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'multiple_devices' }));
-          return;
-        }
-
         const progress = readProgress();
         
         const levelNum = data.level;
@@ -372,19 +326,13 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const stats = JSON.parse(body);
-        const sessionId = stats.sessionId || 'unknown';
-        
-        if (!isSessionAllowed(sessionId)) {
-          res.writeHead(403, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'multiple_devices' }));
-          return;
-        }
-        
         gameStats.push(stats);
         
-        // Update active sessions
-        activeSessions.set(sessionId, {
+        // Update active sessions (using IP as identifier for admin dashboard)
+        const ip = getClientIp(req);
+        activeSessions.set(ip, {
           ...stats,
+          ip: ip,
           lastUpdate: Date.now()
         });
         

@@ -510,34 +510,9 @@
   let startTime = null;
   let timerInterval = null;
   let currentImageUrl = null;
-  const urlParams = new URLSearchParams(window.location.search);
-  let sessionId = urlParams.get('session');
-  if (!sessionId) {
-    sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    urlParams.set('session', sessionId);
-    window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
-  }
   let initialShuffledState = []; // Track the shuffled starting positions
 
-  function navTo(url) {
-    const u = new URL(url, window.location.href);
-    u.searchParams.set('session', sessionId);
-    window.location.href = u.toString();
-  }
-
   // ---------- server communication ----------
-
-  function blockDevice() {
-    document.body.innerHTML = `
-      <div style="display:flex;height:100dvh;align-items:center;justify-content:center;flex-direction:column;gap:20px;text-align:center;padding:20px;">
-        <h1 style="color:var(--text);font-size:24px;">Access Denied</h1>
-        <p style="color:var(--text-dim);">Someone else is already playing on another device.</p>
-        <p style="color:var(--text-dim);font-size:12px;">Please wait until they finish or close their session.</p>
-      </div>
-    `;
-    stopTimer();
-    stopAutoSave();
-  }
 
   function sendStatsToServer(data) {
     data.device = deviceModel;
@@ -547,15 +522,10 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        sessionId,
         timestamp: Date.now(),
         ...data
       })
-    })
-    .then(res => {
-      if (res.status === 403) blockDevice();
-    })
-    .catch(err => console.log('Stats not sent:', err.message));
+    }).catch(err => console.log('Stats not sent:', err.message));
   }
 
   // ---------- level management ----------
@@ -624,7 +594,6 @@
   async function saveProgress(completed, time, moves, currentState, skipped = false) {
     try {
       const progressData = {
-        sessionId,
         level: currentLevel,
         completed,
         time,
@@ -643,15 +612,11 @@
         };
       }
 
-      const response = await fetch('/api/progress', {
+      await fetch('/api/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(progressData)
       });
-      
-      if (response.status === 403) {
-        blockDevice();
-      }
     } catch (err) {
       console.error('Error saving progress:', err);
     }
@@ -870,16 +835,9 @@
 
   function shuffleTiles() {
     const total = N * N;
-    let order;
-    do {
-      order = Array.from({ length: total }, (_, i) => i);
-      for (let i = order.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = order[i];
-        order[i] = order[j];
-        order[j] = tmp;
-      }
-    } while (total > 1 && order.every((v, i) => v === i));
+    // Default puzzle block position, not randomly shuffled
+    // Shift all pieces by 1 position deterministically
+    let order = Array.from({ length: total }, (_, i) => (i + 1) % total);
     
     tiles.forEach((tile, i) => applyPiece(tile, order[i]));
     
@@ -1250,7 +1208,7 @@
     }
     
     // Navigate to levels
-    navTo('levels.html');
+    location.href = 'levels.html';
   });
 
   // Skip modal
@@ -1318,7 +1276,7 @@
     const totalLevels = await getTotalLevels();
     if (nextLevel <= totalLevels) {
       clearGameState(); // Clear saved state when moving to next level
-      navTo(`game.html?level=${nextLevel}`);
+      location.href = `game.html?level=${nextLevel}`;
     }
   });
 
@@ -1331,9 +1289,9 @@
     const nextLevel = currentLevel + 1;
     
     if (solved && nextLevel <= totalLevels) {
-      navTo(`levels.html?unlocked=${nextLevel}`);
+      location.href = `levels.html?unlocked=${nextLevel}`;
     } else {
-      navTo('levels.html');
+      location.href = 'levels.html';
     }
   });
 
@@ -1365,19 +1323,6 @@
   // ---------- init ----------
 
   (async function init() {
-    // Check session first
-    try {
-      const res = await fetch('/api/check-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId })
-      });
-      if (res.status === 403) {
-        blockDevice();
-        return;
-      }
-    } catch (e) {}
-
     currentLevel = getLevelFromURL();
     levelNumberEl.textContent = currentLevel;
     
@@ -1390,7 +1335,7 @@
       backBtn.className = "btn";
       backBtn.type = "button";
       backBtn.textContent = "Back to Levels";
-      backBtn.addEventListener("click", () => navTo('levels.html'));
+      backBtn.addEventListener("click", () => location.href = 'levels.html');
       overlayEl.appendChild(backBtn);
       return;
     }
